@@ -16,7 +16,7 @@ syntax = "proto2";
 
 package ml_metadata;
 
-import "metadata_store.proto";
+import "ml_metadata/proto/metadata_store.proto";
 
 message MLMDBenchConfig {
     optional ConnectionConfig mlmd_config = 1;
@@ -39,45 +39,49 @@ message InitStore {
 
 message FillTypes {
     optional bool update = 1 [default = false];
-    enum specification {
+    enum Specification {
         ArtifactType = 0;
         ExecutionType = 1;
         ContextType = 2;
     }
-    optional UniformDistribution num_properties = 2;
+    optional Specification specification = 2;
+    optional UniformDistribution num_properties_distribution = 3;
 }
 
 message FillNodes {
     optional bool update = 1 [default = false];
-    enum specification {
+    enum Specification {
         Artifact = 0;
         Execution = 1;
         Context = 2;
     }
-    optional UniformDistribution num_properties = 2;
+    optional Specification specification = 2;
+    optional UniformDistribution num_properties_distribution = 3;
 }
 
 message FillEdges {
-    enum specification {
+    enum Specification {
         Event = 0;
         Attribution = 1;
         Association = 2;
     }
-    optional NormalDistribution bipartite_distribution1 = 1;
-    optional NormalDistribution bipartite_distribution2 = 2;
+    optional Specification specification = 1;
+    optional NormalDistribution bipartite_distribution1 = 2;
+    optional NormalDistribution bipartite_distribution2 = 3;
 }
 
 message ReadTypes {
-    enum specification {
+    enum Specification {
         ArtifactTypeByID = 0;
         ExecutionTypeByID = 1;
         ContextTypeByID = 2;
     }
-    optional UniformDistribution num_properties = 1;
+    optional Specification specification = 1;
+    optional UniformDistribution num_properties_distribution = 2;
 }
 
 message ReadNodes {
-    enum specification {
+    enum Specification {
         ArtifactsByID = 0;
         ArtifactsByType = 1;
         ArtifactByTypeAndName = 2;
@@ -93,16 +97,18 @@ message ReadNodes {
         ContextsByArtifact = 12;
         ContextsByExecution = 13;
     }
-    optional UniformDistribution num_properties = 1;
+    optional Specification specification = 1;
+    optional UniformDistribution num_properties_distribution = 2;
 }
 
 message ReadEdges {
-    enum specification {
+    enum Specification {
         EventsByExecutionIDs = 0;
         EventsByArtifactIDs = 1;
     }
-    optional NormalDistribution bipartite_distribution1 = 1;
-    optional NormalDistribution bipartite_distribution2 = 2;
+    optional Specification specification = 1;
+    optional NormalDistribution bipartite_distribution1 = 2;
+    optional NormalDistribution bipartite_distribution2 = 3;
 }
 
 message Workload {
@@ -118,8 +124,9 @@ message Workload {
 }
 
 message ThreadEnv {
-    optional int32 thread_num  = 1;
+    optional int32 thread_num  = 1 [default = 1];
 }
+
 
 message MLMDBenchReport {
     repeated WorkloadResult summaries = 1;

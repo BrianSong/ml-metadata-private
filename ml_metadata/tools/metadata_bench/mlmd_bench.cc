@@ -117,10 +117,20 @@ namespace mlmd_bench {
 	 public:
 	 	Benchmark() {}
 
+	 	void FillArtifactType() {
+	 	}
+
 	 	void Run(ml_metadata::ConnectionConfig mlmd_config, ml_metadata::ThreadEnv thread_env, ml_metadata::Workload curr_workload) {
 	 		if (curr_workload.has_fill_types()) {
 	 			if (curr_workload.fill_types().specification() == ml_metadata::FillTypes::ArtifactType) {
-	 				// method = &Benchmark::FillArtifactType;
+	 				// Single thread mode
+	 				if (thread_env.thread_num() == 1) {
+	 					Stats stats;
+	 					stats.Start();
+		 				FillArtifactType();
+		 				stats.Stop();
+		 				stats.Report("fill_artifact_type");
+	 				}
 	 			}
 	 		}
 	 	}

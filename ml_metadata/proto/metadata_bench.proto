@@ -19,7 +19,7 @@ package ml_metadata;
 import "ml_metadata/proto/metadata_store.proto";
 
 message MLMDBenchConfig {
-    optional ConnectionConfig mlmd_config = 1;
+    optional ConnectionConfig mlmd_connect_config = 1;
     repeated Workload workloads = 2;
     optional ThreadEnv thread_env = 3; 
 }

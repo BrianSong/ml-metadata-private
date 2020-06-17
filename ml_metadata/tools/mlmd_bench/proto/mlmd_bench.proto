@@ -1,0 +1,217 @@
+/* Copyright 2020 Google LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+==============================================================================*/
+// Input and output configurations for mlmd_bench
+syntax = "proto2";
+
+package ml_metadata;
+
+import "ml_metadata/proto/metadata_store.proto";
+
+// Input configurations for mlmd_bench
+message MLMDBenchConfig {
+    // Connection configuration (sqlite, mysql...) for mlmd_bench
+    optional ConnectionConfig mlmd_connect_config = 1;
+    // An array of workload configurations specified by the users
+    repeated WorkloadConfig workload_configs = 2;
+    // Multi-threaded environment configuration for executing the workloads
+    optional ThreadEnvConfig thread_env_config = 3; 
+}
+
+// A uniform distribution within range [a, b]
+message UniformDistribution {
+    // For the purpose of this uniform distribution
+    // a and b will both be integer type
+    optional int32 a = 1;
+    optional int32 b = 2;
+}
+
+// A pareto distribution that generates nodes' popularity
+message ParetoDistribution {
+    // The breadth of popularity 
+    optional double pareto_index = 1;
+}
+
+// The workload config. for creating store initialization
+message InitStoreConfig {}
+
+// The workload config. for filling types 
+// (artifact_types / execution_types / context_types)
+message FillTypesConfig {
+    // The FillTypesConfig can be set to insert or update mode
+    optional bool update = 1 [default = false];
+    enum Specification {
+        ArtifactType = 0;
+        ExecutionType = 1;
+        ContextType = 2;
+    }
+    // Indicate which types to be filled
+    optional Specification specification = 2;
+    // Specify the number of properties for each type
+    // It can be modeled by a uniform distribution
+    optional UniformDistribution num_properties = 3;
+}
+
+// The workload config. for filling nodes (artifacts / executions / contexts)
+message FillNodesConfig {
+    // The FillNodesConfig can be set to insert or update mode
+    optional bool update = 1 [default = false];
+    enum Specification {
+        Artifact = 0;
+        Execution = 1;
+        Context = 2;
+    }
+    // Indicate which type of nodes to be filled
+    optional Specification specification = 2;
+    // Specify the number of properties for each node
+    // It can be modeled by a uniform distribution
+    optional UniformDistribution num_properties = 3;
+    // Specify the string length for each property of the current node.
+    // It can be modeled by a uniform distribution
+    optional UniformDistribution string_value_bytes = 4;
+}
+
+// The workload config. for filling context's edges (attributions / associations)
+message FillContextEdgesConfig {
+    enum Specification {
+        Attribution = 0;
+        Association = 1;
+    }
+    // Indicate which type of context's edges to be filled
+    optional Specification specification = 1;
+    // The node_popularity describes the popularity for each node
+    // It can be modeled by a uniform distribution
+    optional UniformDistribution context_node_popularity = 2;
+    optional UniformDistribution none_context_node_popularity = 3;
+} 
+
+// The workload config. for filling events
+message FillEventsConfig {
+    enum Specification {
+        Input = 0;
+        Output = 1;
+    }
+    // Indicate the type (input / output) of the event
+    optional Specification specification = 1;
+    // Describe the ratio of input and output events to be filled
+    optional double input_output_ratio = 2;
+    // Describe the popularity each execution node
+    // It can be modeled by a uniform distribution
+    optional UniformDistribution execution_node_popularity = 3;
+    // Describe the popularity for the artifacts
+    oneof artifact_node_popularity {
+        // The distribution for artifact popularity can be uniform or pareto
+        // depends on the type of the events
+        UniformDistribution uniform = 4;
+        ParetoDistribution zipf = 5;
+    }
+}
+
+// The workload config. for getting types 
+// (artifact_type, execution_type, context_type)
+message ReadTypesConfig {
+    enum Specification {
+        ArtifactTypesByID = 0;
+        ExecutionTypesByID = 1;
+        ContextTypesByID = 2;
+        AllArtifactTypes = 3;
+        AllExecutionTypes = 4;
+        AllContextTypes = 5;
+    }
+    // Indicate the specification to get types
+    optional Specification specification = 1;
+}
+
+// The workload config. for getting nodes by their properties 
+// (ids, types, names, URIs...)
+message ReadNodesByPropertiesConfig {
+    enum Specification {
+        ArtifactsByID = 0;
+        ArtifactsByType = 1;
+        ArtifactByTypeAndName = 2;
+        ArtifactsByURI = 3;
+        ExecutionsByID = 4;
+        ExecutionsByType = 5;
+        ExecutionByTypeAndName = 6;
+        ContextsByID = 7;
+        ContextsByType = 8;
+        ContextByTypeAndName = 9;
+    }
+    // Indicate what properties should be used to get nodes   
+    // (artifact, execution, context)
+    optional Specification specification = 1;
+}
+
+// The workload config. for getting nodes by transverse APIs 
+// (from a node to another node via edges)
+message ReadNodesByTraverseConfig {
+    enum Specification {
+        ArtifactsByContext = 0;
+        ExecutionsByContext = 1;
+        ContextsByArtifact = 2;
+        ContextsByExecution = 3;
+    }
+    // Indicate which transverse API is used to get nodes
+    optional Specification specification = 1;
+}
+
+// The workload config. for getting events
+message ReadEventsConfig {
+    enum Specification {
+        EventsByExecutionIDs = 0;
+        EventsByArtifactIDs = 1;
+    }
+    // Indicate which specification is used to get events
+    optional Specification specification = 1;
+}
+
+// The generalized workload config.
+message WorkloadConfig {
+    oneof workload {
+        InitStoreConfig init_store = 1;
+        FillTypesConfig fill_types = 2;
+        FillNodesConfig fill_nodes = 3;
+        FillContextEdgesConfig fill_context_edges = 4;
+        FillEventsConfig fill_events = 5;
+        ReadTypesConfig read_types = 6;
+        ReadNodesByPropertiesConfig read_nodes_by_properties = 7;
+        ReadNodesByTraverseConfig read_nodes_by_traverse = 8;
+        ReadEventsConfig read_events = 9;
+    }
+}
+
+// The configuration for the multi-threaded environment 
+// which executing the workloads
+message ThreadEnvConfig {
+    // The number of threads in the thread pool
+    optional int32 thread_num  = 1 [default = 1];
+    // Total number of operations for executing the workload
+    optional int32 num_ops = 2 [default = 10000];
+}
+
+// The output report for mlmd_bench
+message MLMDBenchReport {
+    // A list of summaries for the array of workload configurations
+    repeated WorkloadConfigResult summaries = 1;
+}
+
+// The performance result for each workload configuration
+message WorkloadConfigResult {
+    // The workload configuration that this result belongs to
+    optional WorkloadConfig workload_config = 1;
+    // Microsecond / operations for the current workload_config
+    optional double microsecond_per_op = 2;
+    // Bytes / second for the current workload_config
+    optional double bytes_per_second = 3;
+}

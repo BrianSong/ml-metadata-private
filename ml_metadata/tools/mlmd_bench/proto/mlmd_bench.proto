@@ -195,7 +195,7 @@ message WorkloadConfig {
 // which executing the workloads
 message ThreadEnvConfig {
     // The number of threads in the thread pool
-    optional int32 thread_num  = 1 [default = 1];
+    optional int32 num_threads  = 1 [default = 1];
     // Total number of operations for executing the workload
     optional int32 num_ops = 2 [default = 10000];
 }

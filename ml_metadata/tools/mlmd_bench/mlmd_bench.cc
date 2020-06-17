@@ -51,8 +51,10 @@ void InitMLMDBenchConfigFromCommandLineArgs(
       uniform_distribution.set_b(n);
     } else if (sscanf(argv[i], "--type=%s%c", s, &junk) == 1) {
       specification = s;
-    } else if (sscanf(argv[i], "--num_op=%d%c", &n, &junk) == 1) {
+    } else if (sscanf(argv[i], "--num_ops=%d%c", &n, &junk) == 1) {
       thread_env_config.set_num_ops(n);
+    } else if (sscanf(argv[i], "--num_threads=%d%c", &n, &junk) == 1) {
+      thread_env_config.set_num_threads(n);
     }
   }
 
@@ -345,19 +347,19 @@ class Benchmark {
 // It takes the benchmark and run the workloads specified inside
 class ThreadRunner {
  private:
-  int num_thread;
+  int num_threads;
   int num_op;
   std::mutex mtx;
 
  public:
   ThreadRunner(const ThreadEnvConfig& thread_env_config) {
-    num_thread = thread_env_config.thread_num();
+    num_threads = thread_env_config.num_threads();
     num_op = thread_env_config.num_ops();
   }
 
   // Execution unit of mlmd_bench
   void Run(Benchmark& benchmark) {
-    int op_per_thread = num_op / num_thread;
+    int op_per_thread = num_op / num_threads;
     for (auto& workload : benchmark.workloads) {
       Stats stats;
       stats.Start();

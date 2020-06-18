@@ -1,11 +1,8 @@
 /* Copyright 2020 Google LLC
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
     https://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -318,27 +315,14 @@ class Benchmark {
   // Take an array of workload configurations and generate corresponding
   // workloads
   void CreateWorkloadAndSave(const WorkloadConfig& workload_config) {
-    switch (workload_config.workload_case()) {
-      case (1):
-        std::cout << "Not implement InitStore yet" << std::endl;
-        break;
-      case (2): {
-        // TODO(briansong): Use unique pointer here because otherwise the sub
-        // workload will be destroyed outside the current scope(cannot use raw
-        // pointer since it will point to leased space), we can not pass out by
-        // value since then, it will be declared upon Workload class and lose
-        // the access to the override functions of subclass. Is it a good
-        // approach?
-        std::unique_ptr<FillTypes> p(new FillTypes(&store, workload_config));
-        workloads.push_back(std::move(p));
-        break;
-      }
-      case (3):
-        std::cout << "Not implement ReadTypes yet" << std::endl;
-        break;
-      default:
-        std::cout << "Invalid workload!" << std::endl;
-    }
+    // TODO(briansong): Use unique pointer here because otherwise the sub
+    // workload will be destroyed outside the current scope(cannot use raw
+    // pointer since it will point to leased space), we can not pass out by
+    // value since then, it will be declared upon Workload class and lose
+    // the access to the override functions of subclass. Is it a good
+    // approach?
+    std::unique_ptr<FillTypes> p(new FillTypes(&store, workload_config));
+    workloads.push_back(std::move(p));
   }
 };
 

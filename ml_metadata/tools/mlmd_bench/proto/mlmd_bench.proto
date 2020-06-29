@@ -12,76 +12,75 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-// Input and output configurations for mlmd_bench
+// Input and output configurations for mlmd_bench.
 syntax = "proto2";
 
 package ml_metadata;
 
 import "ml_metadata/proto/metadata_store.proto";
 
-// Input configurations for mlmd_bench
+// Input configurations for mlmd_bench.
 message MLMDBenchConfig {
-    // Connection configuration (sqlite, mysql...) for mlmd_bench
-    optional ConnectionConfig mlmd_connect_config = 1;
-    // An array of workload configurations specified by the users
+    // Connection configuration (sqlite, mysql...) for mlmd_bench.
+    optional ConnectionConfig mlmd_config = 1;
+    // An array of workload configurations specified by the users.
     repeated WorkloadConfig workload_configs = 2;
-    // Multi-threaded environment configuration for executing the workloads
+    // Multi-threaded environment configuration for executing the workloads.
     optional ThreadEnvConfig thread_env_config = 3; 
 }
 
-// A uniform distribution within range [a, b]
+// A uniform distribution within range [a, b].
 message UniformDistribution {
-    // For the purpose of this uniform distribution
-    // a and b will both be integer type
+    // For the purpose of this uniform distribution, 
+    // a and b will both be integer type.
     optional int32 a = 1;
     optional int32 b = 2;
 }
 
-// The workload config. for filling types 
-// (artifact_types / execution_types / context_types)
+// Create and update types: ArtifactTypes / ExecutionTypes / ContextTypes.
 message FillTypesConfig {
-    // The FillTypesConfig can be set to insert or update mode
+    // The FillTypesConfig can be set to insert or update types.
     optional bool update = 1 [default = false];
     enum Specification {
         ArtifactType = 0;
         ExecutionType = 1;
         ContextType = 2;
     }
-    // Indicate which types to be filled
+    // Indicates which types to be filled.
     optional Specification specification = 2;
-    // Specify the number of properties for each type
-    // It can be modeled by a uniform distribution
+    // Specifies the number of properties for each type, modeled by a uniform distr.
     optional UniformDistribution num_properties = 3;
 }
 
-// The generalized workload config.
+// The mlmd_bench workload config.
 message WorkloadConfig {
     oneof workload {
-        FillTypesConfig fill_types = 2;
+        // create and update types: ArtifactType/ExecutionType/ContextType.
+        FillTypesConfig fill_types_config = 1;
     }
+    // the number of operations to be run in parallel.
+    optional int64 num_ops = 2;
 }
 
-// The configuration for the multi-threaded environment 
-// which executing the workloads
+// The configuration for the multi-threaded environment
+// which executing the workloads.
 message ThreadEnvConfig {
-    // The number of threads in the thread pool
+    // The number of threads in the thread pool.
     optional int32 num_threads  = 1;
-    // Total number of operations for executing the workload
-    optional int32 num_ops = 2;
 }
 
-// The output report for mlmd_bench
+// The output report for mlmd_bench.
 message MLMDBenchReport {
-    // A list of summaries for the array of workload configurations
+    // A list of summaries for the array of workload configurations.
     repeated WorkloadConfigResult summaries = 1;
 }
 
-// The performance result for each workload configuration
+// The performance result for each workload configuration.
 message WorkloadConfigResult {
-    // The workload configuration that this result belongs to
+    // The workload configuration that this result belongs to.
     optional WorkloadConfig workload_config = 1;
-    // Microsecond / operations for the current workload_config
+    // Microsecond / operations for the current workload_config.
     optional double microsecond_per_op = 2;
-    // Bytes / second for the current workload_config
+    // Bytes / second for the current workload_config.
     optional double bytes_per_second = 3;
 }

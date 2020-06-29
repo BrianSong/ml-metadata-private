@@ -35,12 +35,14 @@ class WorkloadBase {
 
   // Prepares a list of work items in memory. It may read db to prepare work
   // items.
-  virtual tensorflow::Status SetUp() = 0;
+  virtual tensorflow::Status SetUp(
+      std::unique_ptr<MetadataStore>* set_up_store_ptr) = 0;
 
   // Measure performance for the workload operation on individual work item on
   // MLMD. Only this function will be counted towards performance measurement.
-  virtual tensorflow::Status RunOp(int i, Stats::OpStats& op_stats,
-                                   Watch& watch) = 0;
+  virtual tensorflow::Status RunOp(
+      int i, Stats::OpStats& op_stats, Watch& watch,
+      std::unique_ptr<MetadataStore>* store_ptr) = 0;
 
   // Cleans the list of work items.
   virtual tensorflow::Status TearDown() = 0;
@@ -69,18 +71,23 @@ class Workload : public WorkloadBase {
   std::vector<WorkItemType> setup_work_items_;
   // The list of transferred bytes for each work item.
   std::vector<int> setup_work_items_bytes_;
+  // MetadataStore instance for SetUp().
+  std::unique_ptr<MetadataStore>* set_up_store_ptr_;
+  // MetadataStore instance for RunOp().
+  std::unique_ptr<MetadataStore>* store_ptr_;
 
  public:
   Workload();
-  ~Workload() override = default;
+  virtual ~Workload() = default;
 
-  tensorflow::Status SetUp();
+  tensorflow::Status SetUp(std::unique_ptr<MetadataStore>* set_up_store_ptr);
 
   // The function called inside the SetUp(), it will be implemented inside each
   // specific workload(FillTypes, FillNodes, ...) according to their semantics.
   virtual tensorflow::Status SetUpImpl();
 
-  tensorflow::Status RunOp(int i, Stats::OpStats& op_stats, Watch& watch);
+  tensorflow::Status RunOp(int i, Stats::OpStats& op_stats, Watch& watch,
+                           std::unique_ptr<MetadataStore>* store_ptr);
 
   // The function called inside the RunOp(), it will be implemented inside each
   // specific workload(FillTypes, FillNodes, ...) according to their semantics.

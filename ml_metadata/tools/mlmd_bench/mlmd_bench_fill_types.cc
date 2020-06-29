@@ -33,9 +33,8 @@ std::string RandomStringGenerator() {
 }  // namespace
 
 // FillTypes constructor for setting up its configurations.
-FillTypes::FillTypes(std::unique_ptr<MetadataStore>* store_ptr,
-                     const WorkloadConfig& workload_config)
-    : store_ptr_(store_ptr), workload_config_(workload_config) {
+FillTypes::FillTypes(const WorkloadConfig& workload_config)
+    : workload_config_(workload_config) {
   num_ops_ = workload_config.num_ops();
   // Each FillTypes will have its specification to indicate which type to
   // operate on.
@@ -123,7 +122,9 @@ tensorflow::Status FillTypes::SetUpImpl() {
       // If the type has been existed inside the database(the type name
       // generated this time is not unique), we skip the current operation and
       // regenerate the type name.
-      if ((*store_ptr_)->GetArtifactType(get_request, &get_response).ok()) {
+      if ((*set_up_store_ptr_)
+              ->GetArtifactType(get_request, &get_response)
+              .ok()) {
         continue;
       }
       PutArtifactTypeRequest put_request;
@@ -136,7 +137,9 @@ tensorflow::Status FillTypes::SetUpImpl() {
       google::protobuf::TextFormat::ParseFromString(check_type_query_string,
                                                     &get_request);
       GetExecutionTypeResponse get_response;
-      if ((*store_ptr_)->GetExecutionType(get_request, &get_response).ok()) {
+      if ((*set_up_store_ptr_)
+              ->GetExecutionType(get_request, &get_response)
+              .ok()) {
         continue;
       }
       PutExecutionTypeRequest put_request;
@@ -149,7 +152,9 @@ tensorflow::Status FillTypes::SetUpImpl() {
       google::protobuf::TextFormat::ParseFromString(check_type_query_string,
                                                     &get_request);
       GetContextTypeResponse get_response;
-      if ((*store_ptr_)->GetContextType(get_request, &get_response).ok()) {
+      if ((*set_up_store_ptr_)
+              ->GetContextType(get_request, &get_response)
+              .ok()) {
         continue;
       }
       PutContextTypeRequest put_request;

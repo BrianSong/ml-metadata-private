@@ -45,14 +45,11 @@ class FillTypes : public Workload<FillTypeWorkItemType> {
   std::minstd_rand0 gen_;
   // A list of generated unique type names.
   std::vector<std::string> types_name_;
-  // MetadataStore for current workload.
-  std::unique_ptr<MetadataStore>* store_ptr_;
   // Workload configurations specified by the users.
   WorkloadConfig workload_config_;
 
  public:
-  FillTypes(std::unique_ptr<MetadataStore>* store_ptr,
-            const WorkloadConfig& workload_config);
+  FillTypes(const WorkloadConfig& workload_config);
   ~FillTypes() override = default;
 
   // Set up implementation for FillTypes workload, it will not be included into

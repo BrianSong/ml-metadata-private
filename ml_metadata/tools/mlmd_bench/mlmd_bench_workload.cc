@@ -24,9 +24,11 @@ Workload<WorkItemType>::Workload() {
 }
 
 template <typename WorkItemType>
-tensorflow::Status Workload<WorkItemType>::SetUp() {
+tensorflow::Status Workload<WorkItemType>::SetUp(
+    std::unique_ptr<MetadataStore>* set_up_store_ptr) {
   // Set the is_setup to true to ensure execution sequence.
   is_setup_ = true;
+  set_up_store_ptr_ = std::move(set_up_store_ptr);
   return SetUpImpl();
 }
 
@@ -36,13 +38,14 @@ tensorflow::Status Workload<WorkItemType>::SetUpImpl() {
 }
 
 template <typename WorkItemType>
-tensorflow::Status Workload<WorkItemType>::RunOp(int i,
-                                                 Stats::OpStats& op_stats,
-                                                 Watch& watch) {
+tensorflow::Status Workload<WorkItemType>::RunOp(
+    int i, Stats::OpStats& op_stats, Watch& watch,
+    std::unique_ptr<MetadataStore>* store_ptr) {
   // Check is_setup to ensure execution sequence.
   if (!is_setup_) {
     return tensorflow::errors::FailedPrecondition("Set up is not finished!");
   }
+  store_ptr_ = std::move(store_ptr);
   // Use a watch to calculate the elapsed time of each RunOpImpl().
   watch.Start();
   if (RunOpImpl(i).ok()) {

@@ -1,4 +1,4 @@
-/* Copyright 2019 Google LLC
+/* Copyright 2020 Google LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -26,14 +26,17 @@ namespace {
 struct FillTypesTest : public testing::Test {
   FillTypes* fill_types_p;
   ConnectionConfig mlmd_config;
+  std::unique_ptr<MetadataStore> set_up_store;
+  const MigrationOptions set_up_opts;
   std::unique_ptr<MetadataStore> store;
-  WorkloadConfig workload_config;
   const MigrationOptions opts;
+  WorkloadConfig workload_config;
   UniformDistribution uniform_distribution;
 
   // Create a FillTypes instance.
   void SetUp() override {
     mlmd_config.mutable_fake_database();
+    CreateMetadataStore(mlmd_config, set_up_opts, &set_up_store);
     CreateMetadataStore(mlmd_config, opts, &store);
     workload_config.set_num_ops(10000);
     FillTypesConfig* fill_types_config =
@@ -44,8 +47,8 @@ struct FillTypesTest : public testing::Test {
     uniform_distribution.set_b(10);
 
     fill_types_config->mutable_num_properties()->CopyFrom(uniform_distribution);
-    fill_types_p = new FillTypes(&store, workload_config);
-    fill_types_p->SetUp();
+    fill_types_p = new FillTypes(workload_config);
+    fill_types_p->SetUp(&set_up_store);
   }
 
   // Delete the FillTypes instance.
@@ -59,7 +62,7 @@ TEST_F(FillTypesTest, ConstructorTest) {
   EXPECT_STREQ(fill_types_p->GetSpecification().c_str(), "execution_type");
 }
 
-// Test the SetUpImpl for FillTypes.
+// Test the SetUpImpl() for FillTypes.
 // Check the SetUpImpl() indeed prepared a list of work items whose length is
 // equal to the number of operations.
 TEST_F(FillTypesTest, SetUpImplTest) {
@@ -73,7 +76,10 @@ TEST_F(FillTypesTest, SetUpImplTest) {
 // been inserted into the database.
 TEST_F(FillTypesTest, RunOpImplTest) {
   for (int i = 0; i < fill_types_p->GetNumOps(); ++i) {
-    fill_types_p->RunOpImpl(i);
+    Stats::OpStats op_stats;
+    FakeClock clock;
+    Watch watch(&clock);
+    fill_types_p->RunOp(i, op_stats, watch, &store);
   }
 
   for (int i = 0; i < fill_types_p->GetNumOps(); ++i) {

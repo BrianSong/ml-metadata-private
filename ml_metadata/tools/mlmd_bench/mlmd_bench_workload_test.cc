@@ -16,6 +16,7 @@ limitations under the License.
 
 #include <gtest/gtest.h>
 
+#include "ml_metadata/metadata_store/metadata_store_factory.h"
 #include "tensorflow/core/lib/core/status_test_util.h"
 
 namespace ml_metadata {
@@ -42,18 +43,28 @@ TEST_F(WorkloadTest, ConstructorTest) {
 
 // Test the is_setup is set to true in SetUp().
 TEST_F(WorkloadTest, SetUpTest) {
-  TF_EXPECT_OK(workload->SetUp());
+  ConnectionConfig mlmd_config;
+  mlmd_config.mutable_fake_database();
+  std::unique_ptr<MetadataStore> set_up_store;
+  const MigrationOptions set_up_opts;
+  CreateMetadataStore(mlmd_config, set_up_opts, &set_up_store);
+  TF_EXPECT_OK(workload->SetUp(&set_up_store));
   ASSERT_TRUE(workload->GetSetUpStatus());
 }
 
 // Test the case which executing RunOp() before calling SetUp().
 TEST_F(WorkloadTest, RunOpFailedPreConTest) {
+  ConnectionConfig mlmd_config;
+  mlmd_config.mutable_fake_database();
+  std::unique_ptr<MetadataStore> store;
+  const MigrationOptions opts;
+  CreateMetadataStore(mlmd_config, opts, &store);
   int i = 0;
   Stats::OpStats op_stats;
   FakeClock clock;
   Watch watch(&clock);
   {
-    EXPECT_EQ(workload->RunOp(i, op_stats, watch).code(),
+    EXPECT_EQ(workload->RunOp(i, op_stats, watch, &store).code(),
               tensorflow::error::FAILED_PRECONDITION);
   }
 }

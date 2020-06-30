@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#include "ml_metadata/tools/mlmd_bench/mlmd_bench_fill_types.h"
+#include "ml_metadata/tools/mlmd_bench/fill_types.h"
 
 #include <gtest/gtest.h>
 
@@ -20,19 +20,10 @@ limitations under the License.
 #include "tensorflow/core/lib/core/status_test_util.h"
 
 namespace ml_metadata {
-
 namespace {
 
-struct FillTypesTest : public testing::Test {
-  FillTypes* fill_types_p;
-  ConnectionConfig mlmd_config;
-  std::unique_ptr<MetadataStore> set_up_store;
-  const MigrationOptions set_up_opts;
-  std::unique_ptr<MetadataStore> store;
-  const MigrationOptions opts;
-  WorkloadConfig workload_config;
-  UniformDistribution uniform_distribution;
-
+class FillTypesTest : public testing::Test {
+ protected:
   // Create a FillTypes instance.
   void SetUp() override {
     mlmd_config.mutable_fake_database();
@@ -53,6 +44,15 @@ struct FillTypesTest : public testing::Test {
 
   // Delete the FillTypes instance.
   void TearDown() override { delete fill_types_p; }
+
+  FillTypes* fill_types_p;
+  ConnectionConfig mlmd_config;
+  std::unique_ptr<MetadataStore> set_up_store;
+  const MigrationOptions set_up_opts;
+  std::unique_ptr<MetadataStore> store;
+  const MigrationOptions opts;
+  WorkloadConfig workload_config;
+  UniformDistribution uniform_distribution;
 };
 
 // Test the constructor for FillTypes.
@@ -76,10 +76,10 @@ TEST_F(FillTypesTest, SetUpImplTest) {
 // been inserted into the database.
 TEST_F(FillTypesTest, RunOpImplTest) {
   for (int i = 0; i < fill_types_p->GetNumOps(); ++i) {
-    Stats::OpStats op_stats;
+    OpStats op_stats;
     FakeClock clock;
     Watch watch(&clock);
-    fill_types_p->RunOp(i, op_stats, watch, &store);
+    fill_types_p->RunOp(i, watch, &store, op_stats);
   }
 
   for (int i = 0; i < fill_types_p->GetNumOps(); ++i) {
@@ -97,5 +97,4 @@ TEST_F(FillTypesTest, RunOpImplTest) {
 }
 
 }  // namespace
-
 }  // namespace ml_metadata

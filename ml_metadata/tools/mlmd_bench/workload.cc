@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#include "ml_metadata/tools/mlmd_bench/mlmd_bench_workload.h"
+#include "ml_metadata/tools/mlmd_bench/workload.h"
 
 namespace ml_metadata {
 
@@ -26,43 +26,40 @@ Workload<WorkItemType>::Workload() {
 template <typename WorkItemType>
 tensorflow::Status Workload<WorkItemType>::SetUp(
     std::unique_ptr<MetadataStore>* set_up_store_ptr) {
+  TF_CHECK_OK(SetUpImpl(set_up_store_ptr));
   // Set the is_setup to true to ensure execution sequence.
   is_setup_ = true;
-  set_up_store_ptr_ = std::move(set_up_store_ptr);
-  return SetUpImpl();
+  return tensorflow::Status::OK();
 }
 
 template <typename WorkItemType>
-tensorflow::Status Workload<WorkItemType>::SetUpImpl() {
+tensorflow::Status Workload<WorkItemType>::SetUpImpl(
+    std::unique_ptr<MetadataStore>*& set_up_store_ptr) {
   return tensorflow::Status::OK();
 }
 
 template <typename WorkItemType>
 tensorflow::Status Workload<WorkItemType>::RunOp(
-    int i, Stats::OpStats& op_stats, Watch& watch,
-    std::unique_ptr<MetadataStore>* store_ptr) {
+    int i, Watch watch, std::unique_ptr<MetadataStore>* store_ptr,
+    OpStats& op_stats) {
   // Check is_setup to ensure execution sequence.
   if (!is_setup_) {
     return tensorflow::errors::FailedPrecondition("Set up is not finished!");
   }
-  store_ptr_ = std::move(store_ptr);
   // Use a watch to calculate the elapsed time of each RunOpImpl().
   watch.Start();
-  if (RunOpImpl(i).ok()) {
-    watch.End();
-    // Each operation will have an op_stats to record its statistic using the
-    // execution.
-    op_stats.elapsed_micros = watch.GetElaspedTimeInMicroS();
-    op_stats.transferred_types = setup_work_items_bytes_[i];
-  } else {
-    return tensorflow::errors::Unimplemented(
-        "Can not perform current operation!");
-  }
+  TF_RETURN_IF_ERROR(RunOpImpl(i, store_ptr));
+  watch.End();
+  // Each operation will have an op_stats to record its statistic using the
+  // execution.
+  op_stats.elapsed_micros = watch.GetElaspedTimeInMicroS();
+  op_stats.transferred_types = setup_work_items_bytes_[i];
   return tensorflow::Status::OK();
 }
 
 template <typename WorkItemType>
-tensorflow::Status Workload<WorkItemType>::RunOpImpl(int i) {
+tensorflow::Status Workload<WorkItemType>::RunOpImpl(
+    int i, std::unique_ptr<MetadataStore>*& store_ptr) {
   return tensorflow::Status::OK();
 }
 
@@ -94,5 +91,8 @@ bool Workload<WorkItemType>::GetSetUpStatus() {
 // Avoid link error.
 template class Workload<absl::variant<
     PutArtifactTypeRequest, PutExecutionTypeRequest, PutContextTypeRequest>>;
+
+// Avoid link error.
+template class Workload<std::string>;
 
 }  // namespace ml_metadata

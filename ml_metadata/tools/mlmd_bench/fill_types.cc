@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#include "ml_metadata/tools/mlmd_bench/mlmd_bench_fill_types.h"
+#include "ml_metadata/tools/mlmd_bench/fill_types.h"
 
 namespace ml_metadata {
 
@@ -58,7 +58,8 @@ FillTypes::FillTypes(const WorkloadConfig& workload_config)
   gen_.seed(absl::ToUnixMillis(absl::Now()));
 }
 
-tensorflow::Status FillTypes::SetUpImpl() {
+tensorflow::Status FillTypes::SetUpImpl(
+    std::unique_ptr<MetadataStore>*& set_up_store_ptr) {
   std::fprintf(stderr, "Setting up ...");
   std::fflush(stderr);
   int op = 0;
@@ -122,7 +123,7 @@ tensorflow::Status FillTypes::SetUpImpl() {
       // If the type has been existed inside the database(the type name
       // generated this time is not unique), we skip the current operation and
       // regenerate the type name.
-      if ((*set_up_store_ptr_)
+      if ((*set_up_store_ptr)
               ->GetArtifactType(get_request, &get_response)
               .ok()) {
         continue;
@@ -137,7 +138,7 @@ tensorflow::Status FillTypes::SetUpImpl() {
       google::protobuf::TextFormat::ParseFromString(check_type_query_string,
                                                     &get_request);
       GetExecutionTypeResponse get_response;
-      if ((*set_up_store_ptr_)
+      if ((*set_up_store_ptr)
               ->GetExecutionType(get_request, &get_response)
               .ok()) {
         continue;
@@ -152,7 +153,7 @@ tensorflow::Status FillTypes::SetUpImpl() {
       google::protobuf::TextFormat::ParseFromString(check_type_query_string,
                                                     &get_request);
       GetContextTypeResponse get_response;
-      if ((*set_up_store_ptr_)
+      if ((*set_up_store_ptr)
               ->GetContextType(get_request, &get_response)
               .ok()) {
         continue;
@@ -169,22 +170,23 @@ tensorflow::Status FillTypes::SetUpImpl() {
 }
 
 // Executing the work item prepared in SetUpImpl().
-tensorflow::Status FillTypes::RunOpImpl(int i) {
+tensorflow::Status FillTypes::RunOpImpl(
+    int i, std::unique_ptr<MetadataStore>*& store_ptr) {
   if (specification_ == "artifact_type") {
     PutArtifactTypeRequest put_request =
         absl::get<PutArtifactTypeRequest>(setup_work_items_[i]);
     PutArtifactTypeResponse put_response;
-    return (*store_ptr_)->PutArtifactType(put_request, &put_response);
+    return (*store_ptr)->PutArtifactType(put_request, &put_response);
   } else if (specification_ == "execution_type") {
     PutExecutionTypeRequest put_request =
         absl::get<PutExecutionTypeRequest>(setup_work_items_[i]);
     PutExecutionTypeResponse put_response;
-    return (*store_ptr_)->PutExecutionType(put_request, &put_response);
+    return (*store_ptr)->PutExecutionType(put_request, &put_response);
   } else if (specification_ == "context_type") {
     PutContextTypeRequest put_request =
         absl::get<PutContextTypeRequest>(setup_work_items_[i]);
     PutContextTypeResponse put_response;
-    return (*store_ptr_)->PutContextType(put_request, &put_response);
+    return (*store_ptr)->PutContextType(put_request, &put_response);
   } else {
     return tensorflow::errors::InvalidArgument(
         "Cannot execute the query due to wrong specification!");

@@ -12,8 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#ifndef ML_METADATA_TOOLS_MLMD_BENCH_MLMD_BENCH_WATCH_H
-#define ML_METADATA_TOOLS_MLMD_BENCH_MLMD_BENCH_WATCH_H
+#ifndef ML_METADATA_TOOLS_MLMD_BENCH_WATCH_H
+#define ML_METADATA_TOOLS_MLMD_BENCH_WATCH_H
 
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
@@ -40,11 +40,6 @@ class ABSLClock : public Clock {
 
 // A fake clock used for testing environment.
 class FakeClock : public Clock {
- private:
-  // Tell the current time. It can be set by SetTime() under testing
-  // environment.
-  absl::Time curr_time;
-
  public:
   FakeClock() = default;
   ~FakeClock() override = default;
@@ -53,15 +48,15 @@ class FakeClock : public Clock {
 
   // Set the current time for testing purposes.
   void SetTime(int second);
+
+ private:
+  // Tell the current time. It can be set by SetTime() under testing
+  // environment.
+  absl::Time curr_time;
 };
 
 // Calculating elapsed time for certain time interval.
 class Watch {
- private:
-  absl::Time start_;
-  absl::Time finish_;
-  Clock* clock_;
-
  public:
   // The constructor can take in any clock depends on the current environment.
   Watch(Clock* clock);
@@ -72,8 +67,13 @@ class Watch {
   void End();
 
   double GetElaspedTimeInMicroS();
+
+ private:
+  absl::Time start_;
+  absl::Time finish_;
+  Clock* clock_;
 };
 
 }  // namespace ml_metadata
 
-#endif  // ML_METADATA_TOOLS_MLMD_BENCH_MLMD_BENCH_WATCH_H
+#endif  // ML_METADATA_TOOLS_MLMD_BENCH_WATCH_H

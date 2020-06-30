@@ -54,7 +54,7 @@ message FillTypesConfig {
 
 // The mlmd_bench workload config.
 message WorkloadConfig {
-    oneof workload {
+    oneof workload_config {
         // create and update types: ArtifactType/ExecutionType/ContextType.
         FillTypesConfig fill_types_config = 1;
     }

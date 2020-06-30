@@ -54,9 +54,6 @@ class WorkloadBase {
 
   // Get the number of operations for current workload.
   virtual int GetNumOps() = 0;
-
-  // Get the set up status for current workload.
-  virtual bool GetSetUpStatus() = 0;
 };
 
 // A base class for all specific workloads (FillTypes, FillNodes, ...).
@@ -95,8 +92,6 @@ class Workload : public WorkloadBase {
   std::string GetSpecification();
 
   int GetNumOps();
-
-  bool GetSetUpStatus();
 
  protected:
   std::string specification_;

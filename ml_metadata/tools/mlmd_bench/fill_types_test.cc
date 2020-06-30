@@ -78,6 +78,7 @@ TEST_F(FillTypesTest, RunOpImplTest) {
   for (int i = 0; i < fill_types_p->GetNumOps(); ++i) {
     OpStats op_stats;
     FakeClock clock;
+    clock.SetTime(0);
     Watch watch(&clock);
     fill_types_p->RunOp(i, watch, &store, op_stats);
   }

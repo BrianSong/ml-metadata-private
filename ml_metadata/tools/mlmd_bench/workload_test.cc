@@ -22,39 +22,40 @@ limitations under the License.
 namespace ml_metadata {
 namespace {
 
-// Test the constructor of the Workload class.
-TEST(WorkloadTest, ConstructorTest) {
-  Workload<std::string> workload_;
-  EXPECT_EQ(workload_.GetNumOps(), 0);
-  EXPECT_FALSE(workload_.GetSetUpStatus());
-}
-
-// Test the is_setup is set to true in SetUp().
-TEST(WorkloadTest, SetUpTest) {
+// Test successfulness when executing in the right sequence.
+TEST(WorkloadTest, RunInRightSequenceTest) {
   Workload<std::string> workload_;
   ConnectionConfig mlmd_config;
   mlmd_config.mutable_fake_database();
+
   std::unique_ptr<MetadataStore> set_up_store;
   const MigrationOptions set_up_opts;
   TF_ASSERT_OK(CreateMetadataStore(mlmd_config, set_up_opts, &set_up_store));
-  TF_EXPECT_OK(workload_.SetUp(&set_up_store));
-  ASSERT_TRUE(workload_.GetSetUpStatus());
+
+  TF_ASSERT_OK(workload_.SetUp(&set_up_store));
+  TF_EXPECT_OK(workload_.TearDown());
 }
 
-// Test the case which executing RunOp() before calling SetUp().
-TEST(WorkloadTest, RunOpFailedPreConTest) {
+// Test the cases when executing RunOp() / TearDown() before calling SetUp().
+TEST(WorkloadTest, FailedPreConTest) {
   Workload<std::string> workload_;
   ConnectionConfig mlmd_config;
   mlmd_config.mutable_fake_database();
+
   std::unique_ptr<MetadataStore> store;
   const MigrationOptions opts;
   CreateMetadataStore(mlmd_config, opts, &store);
+
   int i = 0;
   OpStats op_stats;
   FakeClock clock;
   Watch watch(&clock);
   {
     EXPECT_EQ(workload_.RunOp(i, watch, &store, op_stats).code(),
+              tensorflow::error::FAILED_PRECONDITION);
+  }
+  {
+    EXPECT_EQ(workload_.TearDown().code(),
               tensorflow::error::FAILED_PRECONDITION);
   }
 }

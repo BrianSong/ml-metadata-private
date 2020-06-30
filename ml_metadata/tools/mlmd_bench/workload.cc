@@ -65,6 +65,10 @@ tensorflow::Status Workload<WorkItemType>::RunOpImpl(
 
 template <typename WorkItemType>
 tensorflow::Status Workload<WorkItemType>::TearDown() {
+  // Check is_setup to ensure execution sequence.
+  if (!is_setup_) {
+    return tensorflow::errors::FailedPrecondition("Set up is not finished!");
+  }
   return TearDownImpl();
 }
 
@@ -81,11 +85,6 @@ std::string Workload<WorkItemType>::GetSpecification() {
 template <typename WorkItemType>
 int Workload<WorkItemType>::GetNumOps() {
   return num_ops_;
-}
-
-template <typename WorkItemType>
-bool Workload<WorkItemType>::GetSetUpStatus() {
-  return is_setup_;
 }
 
 // Avoid link error.

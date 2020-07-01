@@ -19,14 +19,13 @@ namespace ml_metadata {
 // Set the num_ops and is_setup to their initial value.
 template <typename WorkItemType>
 Workload<WorkItemType>::Workload() {
-  num_ops_ = 0;
   is_setup_ = false;
 }
 
 template <typename WorkItemType>
 tensorflow::Status Workload<WorkItemType>::SetUp(
-    std::unique_ptr<MetadataStore>* set_up_store_ptr) {
-  TF_CHECK_OK(SetUpImpl(set_up_store_ptr));
+    MetadataStore* set_up_store_ptr) {
+  TF_RETURN_IF_ERROR(SetUpImpl(set_up_store_ptr));
   // Set the is_setup to true to ensure execution sequence.
   is_setup_ = true;
   return tensorflow::Status::OK();
@@ -34,14 +33,15 @@ tensorflow::Status Workload<WorkItemType>::SetUp(
 
 template <typename WorkItemType>
 tensorflow::Status Workload<WorkItemType>::SetUpImpl(
-    std::unique_ptr<MetadataStore>*& set_up_store_ptr) {
-  return tensorflow::Status::OK();
+    MetadataStore* set_up_store_ptr) {
+  return tensorflow::errors::Unimplemented(
+      "SetUpImpl() for Workload class is not implemented!");
 }
 
 template <typename WorkItemType>
-tensorflow::Status Workload<WorkItemType>::RunOp(
-    int i, Watch watch, std::unique_ptr<MetadataStore>* store_ptr,
-    OpStats& op_stats) {
+tensorflow::Status Workload<WorkItemType>::RunOp(int i, Watch watch,
+                                                 MetadataStore* store_ptr,
+                                                 OpStats& op_stats) {
   // Check is_setup to ensure execution sequence.
   if (!is_setup_) {
     return tensorflow::errors::FailedPrecondition("Set up is not finished!");
@@ -53,14 +53,15 @@ tensorflow::Status Workload<WorkItemType>::RunOp(
   // Each operation will have an op_stats to record its statistic using the
   // execution.
   op_stats.elapsed_micros = watch.GetElaspedTimeInMicroS();
-  op_stats.transferred_types = setup_work_items_bytes_[i];
+  op_stats.transferred_types = work_items_bytes_[i];
   return tensorflow::Status::OK();
 }
 
 template <typename WorkItemType>
-tensorflow::Status Workload<WorkItemType>::RunOpImpl(
-    int i, std::unique_ptr<MetadataStore>*& store_ptr) {
-  return tensorflow::Status::OK();
+tensorflow::Status Workload<WorkItemType>::RunOpImpl(int i,
+                                                     MetadataStore* store_ptr) {
+  return tensorflow::errors::Unimplemented(
+      "RunOpImpl() for Workload class is not implemented!");
 }
 
 template <typename WorkItemType>
@@ -69,22 +70,19 @@ tensorflow::Status Workload<WorkItemType>::TearDown() {
   if (!is_setup_) {
     return tensorflow::errors::FailedPrecondition("Set up is not finished!");
   }
-  return TearDownImpl();
-}
-
-template <typename WorkItemType>
-tensorflow::Status Workload<WorkItemType>::TearDownImpl() {
+  TF_RETURN_IF_ERROR(TearDownImpl());
   return tensorflow::Status::OK();
 }
 
 template <typename WorkItemType>
-std::string Workload<WorkItemType>::GetSpecification() {
-  return specification_;
+tensorflow::Status Workload<WorkItemType>::TearDownImpl() {
+  return tensorflow::errors::Unimplemented(
+      "TearDownImpl() for Workload class is not implemented!");
 }
 
 template <typename WorkItemType>
-int Workload<WorkItemType>::GetNumOps() {
-  return num_ops_;
+int Workload<WorkItemType>::num_ops() {
+  return work_items_.size();
 }
 
 // Avoid link error.

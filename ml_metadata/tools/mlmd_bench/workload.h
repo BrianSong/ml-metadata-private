@@ -37,23 +37,18 @@ class WorkloadBase {
 
   // Prepares a list of work items in memory. It may read db to prepare work
   // items.
-  virtual tensorflow::Status SetUp(
-      std::unique_ptr<MetadataStore>* set_up_store_ptr) = 0;
+  virtual tensorflow::Status SetUp(MetadataStore* set_up_store_ptr) = 0;
 
   // Measure performance for the workload operation on individual work item on
   // MLMD.
-  virtual tensorflow::Status RunOp(int i, Watch watch,
-                                   std::unique_ptr<MetadataStore>* store_ptr,
+  virtual tensorflow::Status RunOp(int i, Watch watch, MetadataStore* store_ptr,
                                    OpStats& op_stats) = 0;
 
-  // Cleans the list of work items.
+  // Cleans the list of work items and related resources.
   virtual tensorflow::Status TearDown() = 0;
 
-  // Get the specification for current workload.
-  virtual std::string GetSpecification() = 0;
-
   // Get the number of operations for current workload.
-  virtual int GetNumOps() = 0;
+  virtual int num_ops() = 0;
 };
 
 // A base class for all specific workloads (FillTypes, FillNodes, ...).
@@ -65,43 +60,52 @@ class Workload : public WorkloadBase {
   Workload();
   virtual ~Workload() = default;
 
-  tensorflow::Status SetUp(
-      std::unique_ptr<MetadataStore>* set_up_store_ptr) final;
+  // Prepares data related to a workload. It may read the information in the
+  // store.
+  // The method must run before RunOp() to isolate the data preparation
+  // operations with the operation to be measured. The subclass should implement
+  // SetUpImpl(). The given store should be not null and connected. Returns
+  // detailed error if query executions failed.
+  tensorflow::Status SetUp(MetadataStore* set_up_store_ptr) final;
 
+  // Runs the operation of the workload on a work item i on the store.
+  // The operation is measured and kept in op_stats. The subclass should
+  // implement RunOpImpl(), and does not perform irrelevant operations to avoid
+  // being counted in op_stats. Returns Failed Precondition error, if SetUp() is
+  // not finished before running the operation. Returns detailed error if query
+  // execution failed.
+  tensorflow::Status RunOp(int i, Watch watch, MetadataStore* store_ptr,
+                           OpStats& op_stats) final;
+
+  // Cleans the list of work items and related resources.
+  // The cleaning operation will not be included for performance measurement.
+  // The subclass should implement RunOpImpl(). Returns Failed Precondition
+  // error, if SetUp() is not finished before running the operation. Returns
+  // detailed error if query execution failed.
+  tensorflow::Status TearDown() final;
+
+  int num_ops() final;
+
+ protected:
   // The function called inside the SetUp(), it will be implemented inside each
   // specific workload(FillTypes, FillNodes, ...) according to their semantics.
-  virtual tensorflow::Status SetUpImpl(
-      std::unique_ptr<MetadataStore>*& set_up_store_ptr);
-
-  tensorflow::Status RunOp(int i, Watch watch,
-                           std::unique_ptr<MetadataStore>* store_ptr,
-                           OpStats& op_stats) final;
+  virtual tensorflow::Status SetUpImpl(MetadataStore* set_up_store_ptr);
 
   // The function called inside the RunOp(), it will be implemented inside each
   // specific workload(FillTypes, FillNodes, ...) according to their semantics.
-  virtual tensorflow::Status RunOpImpl(
-      int i, std::unique_ptr<MetadataStore>*& store_ptr);
-
-  tensorflow::Status TearDown() final;
+  virtual tensorflow::Status RunOpImpl(int i, MetadataStore* store_ptr);
 
   // The function called inside the TearDown(), it will be implemented inside
   // each specific workload(FillTypes, FillNodes, ...) according to their
   // semantics.
   virtual tensorflow::Status TearDownImpl();
 
-  std::string GetSpecification();
-
-  int GetNumOps();
-
- protected:
-  std::string specification_;
-  int num_ops_;
   bool is_setup_;
-  // The list of work items(PutArtifactTypeRequest, PutExecutionRequest...)
-  // prepared by the SetUp().
-  std::vector<WorkItemType> setup_work_items_;
+  // The work items for a workload. It is created in SetUp(), and each RunOp
+  // processes one work item.
+  std::vector<WorkItemType> work_items_;
   // The list of transferred bytes for each work item.
-  std::vector<int> setup_work_items_bytes_;
+  std::vector<int> work_items_bytes_;
 };
 
 }  // namespace ml_metadata

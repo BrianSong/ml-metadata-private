@@ -41,39 +41,40 @@ using FillTypeWorkItemType =
 // ExecutionTypes / ContextTypes
 class FillTypes : public Workload<FillTypeWorkItemType> {
  public:
-  FillTypes(const WorkloadConfig& workload_config);
+  FillTypes(const FillTypesConfig& fill_types_config, int num_ops);
   ~FillTypes() override = default;
 
+  // Get the list of work items.
+  std::vector<FillTypeWorkItemType> setup_work_items();
+
+  // Get the list of work item bytes.
+  std::vector<int> work_items_bytes();
+
+  // Get the list of generated unique type names.
+  std::vector<std::string> types_name();
+
+  FillTypesConfig config();
+
+ protected:
   // Set up implementation for FillTypes workload, it will not be included into
   // the performance evaluation.
-  tensorflow::Status SetUpImpl(
-      std::unique_ptr<MetadataStore>*& set_up_store_ptr);
+  tensorflow::Status SetUpImpl(MetadataStore* set_up_store_ptr) final;
 
   // The real operation being performed against the database.
   // This function will be counted towards performance measurement.
-  tensorflow::Status RunOpImpl(int i,
-                               std::unique_ptr<MetadataStore>*& store_ptr);
+  tensorflow::Status RunOpImpl(int i, MetadataStore* store_ptr) final;
 
   // Tear down implementation for FillTypes, it will not be included into
   // the performance evaluation.
-  tensorflow::Status TearDownImpl(Stats& thread_stats);
-
-  // Get the list of work items.
-  std::vector<FillTypeWorkItemType> GetWorkItem();
-
-  // Get the list of work item bytes.
-  std::vector<int> GetWorkItemBytes();
-
-  // Get the list of generated unique type names.
-  std::vector<std::string> GetTypesName();
+  tensorflow::Status TearDownImpl() final;
 
  private:
-  // Random generator for generating random type names.
-  std::minstd_rand0 gen_;
   // A list of generated unique type names.
   std::vector<std::string> types_name_;
   // Workload configurations specified by the users.
-  WorkloadConfig workload_config_;
+  FillTypesConfig fill_types_config_;
+  // Number of operations executing the current workload.
+  int num_ops_;
 };
 
 }  // namespace ml_metadata

@@ -22,23 +22,22 @@ limitations under the License.
 namespace ml_metadata {
 namespace {
 
+class FakeWorkload : public Workload<std::string> {
+  tensorflow::Status SetUpImpl(MetadataStore* store_ptr) {
+    work_items_bytes_.push_back(8888);
+    return tensorflow::Status::OK();
+  }
+
+  tensorflow::Status RunOpImpl(int i, MetadataStore* store_ptr) {
+    return tensorflow::Status::OK();
+  }
+
+  tensorflow::Status TearDownImpl() { return tensorflow::Status::OK(); }
+};
+
 // Test successfulness when executing in the right sequence.
 TEST(WorkloadTest, RunInRightSequenceTest) {
-  Workload<std::string> workload_;
-  ConnectionConfig mlmd_config;
-  mlmd_config.mutable_fake_database();
-
-  std::unique_ptr<MetadataStore> set_up_store;
-  const MigrationOptions set_up_opts;
-  TF_ASSERT_OK(CreateMetadataStore(mlmd_config, set_up_opts, &set_up_store));
-
-  TF_ASSERT_OK(workload_.SetUp(&set_up_store));
-  TF_EXPECT_OK(workload_.TearDown());
-}
-
-// Test the cases when executing RunOp() / TearDown() before calling SetUp().
-TEST(WorkloadTest, FailedPreConTest) {
-  Workload<std::string> workload_;
+  FakeWorkload workload;
   ConnectionConfig mlmd_config;
   mlmd_config.mutable_fake_database();
 
@@ -50,14 +49,29 @@ TEST(WorkloadTest, FailedPreConTest) {
   OpStats op_stats;
   FakeClock clock;
   Watch watch(&clock);
-  {
-    EXPECT_EQ(workload_.RunOp(i, watch, &store, op_stats).code(),
-              tensorflow::error::FAILED_PRECONDITION);
-  }
-  {
-    EXPECT_EQ(workload_.TearDown().code(),
-              tensorflow::error::FAILED_PRECONDITION);
-  }
+
+  TF_ASSERT_OK(workload.SetUp(store.get()));
+  TF_EXPECT_OK(workload.RunOp(i, watch, store.get(), op_stats));
+  TF_EXPECT_OK(workload.TearDown());
+}
+
+// Test the cases when executing RunOp() / TearDown() before calling SetUp().
+TEST(WorkloadTest, FailedPreconditionTest) {
+  FakeWorkload workload;
+  ConnectionConfig mlmd_config;
+  mlmd_config.mutable_fake_database();
+
+  std::unique_ptr<MetadataStore> store;
+  const MigrationOptions opts;
+  CreateMetadataStore(mlmd_config, opts, &store);
+
+  int i = 0;
+  OpStats op_stats;
+  FakeClock clock;
+  Watch watch(&clock);
+  EXPECT_EQ(workload.RunOp(i, watch, store.get(), op_stats).code(),
+            tensorflow::error::FAILED_PRECONDITION);
+  EXPECT_EQ(workload.TearDown().code(), tensorflow::error::FAILED_PRECONDITION);
 }
 
 }  // namespace

@@ -63,14 +63,14 @@ class WorkloadTest : public ::testing::Test {
   OpStats op_stats;
 };
 
-// Test the cases when executing in the right sequence.
+// Tests the cases when executing in the right sequence.
 TEST_F(WorkloadTest, RunInRightSequenceTest) {
   TF_ASSERT_OK(workload.SetUp(store.get()));
   TF_EXPECT_OK(workload.RunOp(0, store.get(), op_stats));
   TF_EXPECT_OK(workload.TearDown());
 }
 
-// Test the cases when executing RunOp() / TearDown() before calling SetUp().
+// Tests the cases when executing RunOp() / TearDown() before calling SetUp().
 // The Failed Precondition error should be returned.
 TEST_F(WorkloadTest, FailedPreconditionTest) {
   EXPECT_EQ(workload.RunOp(0, store.get(), op_stats).code(),
@@ -78,7 +78,7 @@ TEST_F(WorkloadTest, FailedPreconditionTest) {
   EXPECT_EQ(workload.TearDown().code(), tensorflow::error::FAILED_PRECONDITION);
 }
 
-// Test the cases when inputting invalid work item index to RunOp().
+// Tests the cases when inputting invalid work item index to RunOp().
 // The Invalid Argument error should be returned.
 TEST_F(WorkloadTest, InvalidWorkItemIndexTest) {
   TF_ASSERT_OK(workload.SetUp(store.get()));

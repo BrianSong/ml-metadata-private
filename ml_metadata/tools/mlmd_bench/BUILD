@@ -28,7 +28,6 @@ cc_library(
     deps = [
         ":workload",
         "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/time",
         "@com_google_absl//absl/types:variant",
         "//ml_metadata/metadata_store:metadata_store",
         "//ml_metadata/proto:metadata_store_proto",

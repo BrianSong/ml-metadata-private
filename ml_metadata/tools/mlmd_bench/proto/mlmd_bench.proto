@@ -31,20 +31,18 @@ message MLMDBenchConfig {
 
 // A uniform distribution within range [a, b].
 message UniformDistribution {
-    // For the purpose of this uniform distribution, 
-    // a and b will both be integer type.
-    optional int32 a = 1;
-    optional int32 b = 2;
+    optional int64 minimum = 1;
+    optional int64 maximum = 2;
 }
 
 // Create and update types: ArtifactTypes / ExecutionTypes / ContextTypes.
 message FillTypesConfig {
     // The FillTypesConfig can be set to insert or update types.
-    optional bool update = 1 [default = false];
+    optional bool update = 1;
     enum Specification {
-        ArtifactType = 0;
-        ExecutionType = 1;
-        ContextType = 2;
+        ARTIFACT_TYPE = 0;
+        EXECUTION_TYPE = 1;
+        CONTEXT_TYPE = 2;
     }
     // Indicates which types to be filled.
     optional Specification specification = 2;
@@ -58,8 +56,8 @@ message WorkloadConfig {
         // create and update types: ArtifactType/ExecutionType/ContextType.
         FillTypesConfig fill_types_config = 1;
     }
-    // the number of operations to be run in parallel.
-    optional int64 num_ops = 2;
+    // The number of operations to be run in parallel.
+    optional int64 num_operations = 2;
 }
 
 // The configuration for the multi-threaded environment
@@ -80,7 +78,7 @@ message WorkloadConfigResult {
     // The workload configuration that this result belongs to.
     optional WorkloadConfig workload_config = 1;
     // Microsecond / operations for the current workload_config.
-    optional double microsecond_per_op = 2;
+    optional double microseconds_per_operation = 2;
     // Bytes / second for the current workload_config.
     optional double bytes_per_second = 3;
 }

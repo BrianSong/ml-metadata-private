@@ -38,17 +38,18 @@ class FillTypesTest : public ::testing::Test {
     fill_types_config = testing::ParseTextProtoOrDie<FillTypesConfig>(
         R"(
           update: false
-          specification: ArtifactType
-          num_properties { a: 1 b: 10 }
+          specification: ARTIFACT_TYPE
+          num_properties { minimum: 1 maximum: 10 }
         )");
     fill_types =
-        absl::make_unique<FillTypes>(FillTypes(fill_types_config, 100));
+        absl::make_unique<FillTypes>(FillTypes(fill_types_config, num_ops));
   }
 
   std::unique_ptr<FillTypes> fill_types;
   ConnectionConfig mlmd_config;
   FillTypesConfig fill_types_config;
   std::unique_ptr<MetadataStore> store;
+  int num_ops = 100;
 };
 
 // Tests the SetUpImpl() for FillTypes.
@@ -56,7 +57,7 @@ class FillTypesTest : public ::testing::Test {
 // the same as the specified number of operations.
 TEST_F(FillTypesTest, SetUpImplTest) {
   TF_ASSERT_OK(fill_types->SetUp(store.get()));
-  EXPECT_EQ(100, fill_types->num_ops());
+  EXPECT_EQ(num_ops, fill_types->num_ops());
 }
 
 // Tests the RunOpImpl() for insert types.
@@ -73,82 +74,6 @@ TEST_F(FillTypesTest, InsertTest) {
   GetArtifactTypesResponse get_response;
   TF_ASSERT_OK(store->GetArtifactTypes(get_request, &get_response));
   EXPECT_EQ(get_response.artifact_types_size(), fill_types->num_ops());
-}
-
-// Tests the invalid num_ops cases.
-// The num_ops should be smaller or equal to the number of existed types in db.
-TEST_F(FillTypesTest, MoreTypesToUpdateThanExistTest) {
-  // First runs the insert operations to ensure the db has some types inside.
-  TF_ASSERT_OK(fill_types->SetUp(store.get()));
-  for (int64 i = 0; i < fill_types->num_ops(); ++i) {
-    OpStats op_stats;
-    TF_EXPECT_OK(fill_types->RunOp(i, store.get(), op_stats));
-  }
-
-  std::unique_ptr<FillTypes> fill_types_update;
-  // Updates configuration where update is set to true.
-  FillTypesConfig fill_types_update_config =
-      testing::ParseTextProtoOrDie<FillTypesConfig>(
-          R"(
-            update: true
-            specification: ArtifactType
-            num_properties { a: 1 b: 10 }
-          )");
-  fill_types_update =
-      absl::make_unique<FillTypes>(FillTypes(fill_types_update_config, 101));
-  // Since 101 > 100, the SetUpImpl() inside SetUp() should return Invalid
-  // Argument error.
-  EXPECT_EQ(fill_types_update->SetUp(store.get()).code(),
-            tensorflow::error::INVALID_ARGUMENT);
-}
-
-// Tests the RunOpImpl() for update types.
-TEST_F(FillTypesTest, UpdateTest) {
-  TF_ASSERT_OK(fill_types->SetUp(store.get()));
-  for (int64 i = 0; i < fill_types->num_ops(); ++i) {
-    OpStats op_stats;
-    TF_EXPECT_OK(fill_types->RunOp(i, store.get(), op_stats));
-  }
-
-  // Gets the get_response_before_update for later comparison.
-  GetArtifactTypesRequest get_request_before_update;
-  GetArtifactTypesResponse get_response_before_update;
-  TF_ASSERT_OK(store->GetArtifactTypes(get_request_before_update,
-                                       &get_response_before_update));
-
-  std::unique_ptr<FillTypes> fill_types_update;
-  FillTypesConfig fill_types_update_config =
-      testing::ParseTextProtoOrDie<FillTypesConfig>(
-          R"(
-            update: true
-            specification: ArtifactType
-            num_properties { a: 1 b: 10 }
-          )");
-  fill_types_update =
-      absl::make_unique<FillTypes>(FillTypes(fill_types_update_config, 100));
-  TF_ASSERT_OK(fill_types_update->SetUp(store.get()));
-  for (int64 i = 0; i < fill_types_update->num_ops(); ++i) {
-    OpStats op_stats;
-    TF_EXPECT_OK(fill_types_update->RunOp(i, store.get(), op_stats));
-  }
-
-  // Gets the get_response_after_update for later comparison.
-  GetArtifactTypesRequest get_request_after_update;
-  GetArtifactTypesResponse get_response_after_update;
-  TF_ASSERT_OK(store->GetArtifactTypes(get_request_after_update,
-                                       &get_response_after_update));
-
-  // If the updates are working properly, the type name should remain the same
-  // even after the updates. On the other hand, the properties size for each
-  // type should be greater than before since some new fields have been added to
-  // each type.
-  for (int64 i = 0; i < fill_types_update->num_ops(); ++i) {
-    EXPECT_STREQ(get_response_before_update.artifact_types()[i].name().c_str(),
-                 get_response_after_update.artifact_types()[i].name().c_str());
-    EXPECT_LT(
-        get_response_before_update.artifact_types()[i].properties().size(),
-        get_response_after_update.artifact_types()[i].properties().size());
-  }
 }
 
 }  // namespace

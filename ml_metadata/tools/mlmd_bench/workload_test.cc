@@ -15,63 +15,79 @@ limitations under the License.
 #include "ml_metadata/tools/mlmd_bench/workload.h"
 
 #include <gtest/gtest.h>
-
+#include "ml_metadata/metadata_store/metadata_store.h"
 #include "ml_metadata/metadata_store/metadata_store_factory.h"
+#include "ml_metadata/proto/metadata_store.pb.h"
+#include "tensorflow/core/lib/core/errors.h"
+#include "tensorflow/core/lib/core/status.h"
 #include "tensorflow/core/lib/core/status_test_util.h"
 
 namespace ml_metadata {
 namespace {
 
+// A fake workload class that implements the Workload interface.
+// Its SetUpImpl(), RunOpImpl() and TearDownImpl() are designed
+// specifically for testing.
 class FakeWorkload : public Workload<std::string> {
-  tensorflow::Status SetUpImpl(MetadataStore* store_ptr) {
-    work_items_bytes_.push_back(8888);
+  tensorflow::Status SetUpImpl(MetadataStore* store) {
+    // The work items for this fake workload will be ten pairs of string and
+    // integer.
+    for (int i = 0; i < 100; ++i) {
+      work_items_.emplace_back("abcd", 3456);
+    }
     return tensorflow::Status::OK();
   }
 
-  tensorflow::Status RunOpImpl(int i, MetadataStore* store_ptr) {
+  tensorflow::Status RunOpImpl(int64 i, MetadataStore* store) {
     return tensorflow::Status::OK();
   }
 
-  tensorflow::Status TearDownImpl() { return tensorflow::Status::OK(); }
+  tensorflow::Status TearDownImpl() {
+    work_items_.clear();
+    return tensorflow::Status::OK();
+  }
 };
 
-// Test successfulness when executing in the right sequence.
-TEST(WorkloadTest, RunInRightSequenceTest) {
+// Test fixture that uses the same data configuration for multiple following
+// tests.
+class WorkloadTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    mlmd_config.mutable_fake_database();
+    TF_ASSERT_OK(CreateMetadataStore(mlmd_config, &store));
+  }
+
   FakeWorkload workload;
   ConnectionConfig mlmd_config;
-  mlmd_config.mutable_fake_database();
-
   std::unique_ptr<MetadataStore> store;
-  const MigrationOptions opts;
-  CreateMetadataStore(mlmd_config, opts, &store);
-
-  int i = 0;
   OpStats op_stats;
-  FakeClock clock;
-  Watch watch(&clock);
+};
 
+// Test the cases when executing in the right sequence.
+TEST_F(WorkloadTest, RunInRightSequenceTest) {
   TF_ASSERT_OK(workload.SetUp(store.get()));
-  TF_EXPECT_OK(workload.RunOp(i, watch, store.get(), op_stats));
+  TF_EXPECT_OK(workload.RunOp(0, store.get(), op_stats));
   TF_EXPECT_OK(workload.TearDown());
 }
 
 // Test the cases when executing RunOp() / TearDown() before calling SetUp().
-TEST(WorkloadTest, FailedPreconditionTest) {
-  FakeWorkload workload;
-  ConnectionConfig mlmd_config;
-  mlmd_config.mutable_fake_database();
-
-  std::unique_ptr<MetadataStore> store;
-  const MigrationOptions opts;
-  CreateMetadataStore(mlmd_config, opts, &store);
-
-  int i = 0;
-  OpStats op_stats;
-  FakeClock clock;
-  Watch watch(&clock);
-  EXPECT_EQ(workload.RunOp(i, watch, store.get(), op_stats).code(),
+// The Failed Precondition error should be returned.
+TEST_F(WorkloadTest, FailedPreconditionTest) {
+  EXPECT_EQ(workload.RunOp(0, store.get(), op_stats).code(),
             tensorflow::error::FAILED_PRECONDITION);
   EXPECT_EQ(workload.TearDown().code(), tensorflow::error::FAILED_PRECONDITION);
+}
+
+// Test the cases when inputting invalid work item index to RunOp().
+// The Invalid Argument error should be returned.
+TEST_F(WorkloadTest, InvalidWorkItemIndexTest) {
+  TF_ASSERT_OK(workload.SetUp(store.get()));
+  // -1 and 100 are not within the range [0, 100), the RunOp() should return
+  // Invalid Argument error.
+  EXPECT_EQ(workload.RunOp(-1, store.get(), op_stats).code(),
+            tensorflow::error::INVALID_ARGUMENT);
+  EXPECT_EQ(workload.RunOp(100, store.get(), op_stats).code(),
+            tensorflow::error::INVALID_ARGUMENT);
 }
 
 }  // namespace

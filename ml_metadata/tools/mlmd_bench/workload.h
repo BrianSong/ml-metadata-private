@@ -45,9 +45,10 @@ class WorkloadBase {
   virtual tensorflow::Status TearDown() = 0;
 
   // Gets the number of operations for current workload.
-  virtual int64 num_ops() = 0;
+  virtual int64 num_operations() = 0;
 
-  // Gets the current workload's name.
+  // Gets the current workload's name, which is used in stats report for this
+  // workload.
   virtual std::string name() = 0;
 };
 
@@ -91,10 +92,10 @@ class Workload : public WorkloadBase {
     }
     absl::Time start_time = absl::Now();
     TF_RETURN_IF_ERROR(RunOpImpl(i, store));
-    absl::Time end_time = absl::Now();
     // Each operation will have an op_stats to record the statistic of the
     // current single operation.
-    op_stats.elapsed_micros = (end_time - start_time) / (absl::Microseconds(1));
+    op_stats.elapsed_microseconds =
+        (absl::Now() - start_time) / (absl::Microseconds(1));
     op_stats.transferred_bytes = work_items_[i].second;
     return tensorflow::Status::OK();
   }
@@ -113,7 +114,7 @@ class Workload : public WorkloadBase {
     return tensorflow::Status::OK();
   }
 
-  int64 num_ops() final { return work_items_.size(); }
+  int64 num_operations() final { return work_items_.size(); }
 
   std::string name() final { return name_; }
 

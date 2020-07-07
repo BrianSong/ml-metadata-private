@@ -19,7 +19,7 @@ load(
 
 licenses(["notice"])  # Apache 2.0
 
-package(default_visibility = ["//visibility:public"])
+package(default_visibility = ["//visibility:private"])
 
 cc_library(
     name = "fill_types_workload",
@@ -59,7 +59,9 @@ ml_metadata_cc_test(
 cc_library(
     name = "stats",
     hdrs = ["stats.h"],
-    deps = []
+    deps = [
+        "//ml_metadata/metadata_store:types",
+    ]
 )
 
 cc_library(

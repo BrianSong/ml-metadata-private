@@ -32,48 +32,48 @@ namespace {
 class FillTypesTest : public ::testing::Test {
  protected:
   void SetUp() override {
+    ConnectionConfig mlmd_config;
     // Uses a fake in-memory SQLite database for testing.
     mlmd_config.mutable_fake_database();
-    TF_ASSERT_OK(CreateMetadataStore(mlmd_config, &store));
+    TF_ASSERT_OK(CreateMetadataStore(mlmd_config, &store_));
+    FillTypesConfig fill_types_config;
     fill_types_config = testing::ParseTextProtoOrDie<FillTypesConfig>(
         R"(
           update: false
           specification: ARTIFACT_TYPE
           num_properties { minimum: 1 maximum: 10 }
         )");
-    fill_types =
-        absl::make_unique<FillTypes>(FillTypes(fill_types_config, num_ops));
+    fill_types_ =
+        absl::make_unique<FillTypes>(FillTypes(fill_types_config, 100));
   }
 
-  std::unique_ptr<FillTypes> fill_types;
-  ConnectionConfig mlmd_config;
-  FillTypesConfig fill_types_config;
-  std::unique_ptr<MetadataStore> store;
-  int num_ops = 100;
+  std::unique_ptr<FillTypes> fill_types_;
+  std::unique_ptr<MetadataStore> store_;
 };
 
 // Tests the SetUpImpl() for FillTypes.
 // Checks the SetUpImpl() indeed prepares a list of work items whose length is
 // the same as the specified number of operations.
 TEST_F(FillTypesTest, SetUpImplTest) {
-  TF_ASSERT_OK(fill_types->SetUp(store.get()));
-  EXPECT_EQ(num_ops, fill_types->num_ops());
+  int num_operations = 100;
+  TF_ASSERT_OK(fill_types_->SetUp(store_.get()));
+  EXPECT_EQ(num_operations, fill_types_->num_operations());
 }
 
 // Tests the RunOpImpl() for insert types.
 // Checks indeed all the work items have been executed and all the types have
 // been inserted into the db.
 TEST_F(FillTypesTest, InsertTest) {
-  TF_ASSERT_OK(fill_types->SetUp(store.get()));
-  for (int64 i = 0; i < fill_types->num_ops(); ++i) {
+  TF_ASSERT_OK(fill_types_->SetUp(store_.get()));
+  for (int64 i = 0; i < fill_types_->num_operations(); ++i) {
     OpStats op_stats{0, 0};
-    TF_EXPECT_OK(fill_types->RunOp(i, store.get(), op_stats));
+    TF_EXPECT_OK(fill_types_->RunOp(i, store_.get(), op_stats));
   }
 
   GetArtifactTypesRequest get_request;
   GetArtifactTypesResponse get_response;
-  TF_ASSERT_OK(store->GetArtifactTypes(get_request, &get_response));
-  EXPECT_EQ(get_response.artifact_types_size(), fill_types->num_ops());
+  TF_ASSERT_OK(store_->GetArtifactTypes(get_request, &get_response));
+  EXPECT_EQ(get_response.artifact_types_size(), fill_types_->num_operations());
 }
 
 }  // namespace

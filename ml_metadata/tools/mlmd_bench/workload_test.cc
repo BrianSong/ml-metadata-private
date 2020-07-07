@@ -53,40 +53,43 @@ class FakeWorkload : public Workload<std::string> {
 class WorkloadTest : public ::testing::Test {
  protected:
   void SetUp() override {
+    ConnectionConfig mlmd_config;
     mlmd_config.mutable_fake_database();
-    TF_ASSERT_OK(CreateMetadataStore(mlmd_config, &store));
+    TF_ASSERT_OK(CreateMetadataStore(mlmd_config, &store_));
   }
 
-  FakeWorkload workload;
-  ConnectionConfig mlmd_config;
-  std::unique_ptr<MetadataStore> store;
-  OpStats op_stats;
+  FakeWorkload workload_;
+  std::unique_ptr<MetadataStore> store_;
 };
 
 // Tests the cases when executing in the right sequence.
 TEST_F(WorkloadTest, RunInRightSequenceTest) {
-  TF_ASSERT_OK(workload.SetUp(store.get()));
-  TF_EXPECT_OK(workload.RunOp(0, store.get(), op_stats));
-  TF_EXPECT_OK(workload.TearDown());
+  OpStats op_stats;
+  TF_ASSERT_OK(workload_.SetUp(store_.get()));
+  TF_EXPECT_OK(workload_.RunOp(0, store_.get(), op_stats));
+  TF_EXPECT_OK(workload_.TearDown());
 }
 
 // Tests the cases when executing RunOp() / TearDown() before calling SetUp().
 // The Failed Precondition error should be returned.
 TEST_F(WorkloadTest, FailedPreconditionTest) {
-  EXPECT_EQ(workload.RunOp(0, store.get(), op_stats).code(),
+  OpStats op_stats;
+  EXPECT_EQ(workload_.RunOp(0, store_.get(), op_stats).code(),
             tensorflow::error::FAILED_PRECONDITION);
-  EXPECT_EQ(workload.TearDown().code(), tensorflow::error::FAILED_PRECONDITION);
+  EXPECT_EQ(workload_.TearDown().code(),
+            tensorflow::error::FAILED_PRECONDITION);
 }
 
 // Tests the cases when inputting invalid work item index to RunOp().
 // The Invalid Argument error should be returned.
 TEST_F(WorkloadTest, InvalidWorkItemIndexTest) {
-  TF_ASSERT_OK(workload.SetUp(store.get()));
+  OpStats op_stats;
+  TF_ASSERT_OK(workload_.SetUp(store_.get()));
   // -1 and 100 are not within the range [0, 100), the RunOp() should return
   // Invalid Argument error.
-  EXPECT_EQ(workload.RunOp(-1, store.get(), op_stats).code(),
+  EXPECT_EQ(workload_.RunOp(-1, store_.get(), op_stats).code(),
             tensorflow::error::INVALID_ARGUMENT);
-  EXPECT_EQ(workload.RunOp(100, store.get(), op_stats).code(),
+  EXPECT_EQ(workload_.RunOp(100, store_.get(), op_stats).code(),
             tensorflow::error::INVALID_ARGUMENT);
 }
 

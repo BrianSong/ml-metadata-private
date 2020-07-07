@@ -29,7 +29,7 @@ message MLMDBenchConfig {
   optional ThreadEnvConfig thread_env_config = 3; 
 }
 
-// A uniform distribution within range [a, b].
+// A uniform distribution within range [minimum, maximum].
 message UniformDistribution {
   optional int64 minimum = 1;
   optional int64 maximum = 2;

@@ -33,7 +33,7 @@ using FillTypeWorkItemType =
 // ExecutionTypes / ContextTypes.
 class FillTypes : public Workload<FillTypeWorkItemType> {
  public:
-  FillTypes(const FillTypesConfig& fill_types_config, int64 num_ops);
+  FillTypes(const FillTypesConfig& fill_types_config, int64 num_operations);
   ~FillTypes() override = default;
 
  protected:
@@ -44,15 +44,8 @@ class FillTypes : public Workload<FillTypeWorkItemType> {
   // by greatening a random type name and the number of properties for each type
   // w.r.t. the uniform distribution. As the type name has a unique constraint,
   // when the same name is generated, a rejection sampling is performed to jump
-  // through current operation and generate another name.
-  // For updating, it will first read the db to get all the current types for
-  // updating. The existed types will be modified accordingly for update
-  // purpose(e.g., add some fields. The number of new added field will be
-  // decided w.r.t. the uniform distribution). Then, the list of work items
-  // prepared by SetUpImpl() will be a list of FillTypesRequests with updated
-  // types. Returns Invalid Argument error, if the num_ops is greater than the
-  // number of existed types in db. Returns detailed error if query executions
-  // failed.
+  // through current operation and generate another name. Returns detailed error
+  // if query executions failed.
   tensorflow::Status SetUpImpl(MetadataStore* store) final;
 
   // Specific implementation of RunOpImpl() for FillTypes workload according to
@@ -68,7 +61,9 @@ class FillTypes : public Workload<FillTypeWorkItemType> {
   // Workload configurations specified by the users.
   const FillTypesConfig fill_types_config_;
   // Number of operations for the current workload.
-  const int64 num_ops_;
+  const int64 num_operations_;
+  // A set used to ensure each type name generated is unique.
+  std::unordered_set<std::string> unique_name_checker_;
 };
 
 }  // namespace ml_metadata

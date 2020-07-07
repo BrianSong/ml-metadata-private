@@ -15,13 +15,15 @@ limitations under the License.
 #ifndef ML_METADATA_TOOLS_MLMD_BENCH_STATS_H
 #define ML_METADATA_TOOLS_MLMD_BENCH_STATS_H
 
+#include "ml_metadata/metadata_store/types.h"
+
 namespace ml_metadata {
 
 // OpStats records the statics(elapsed microsecond, transferred bytes) of each
 // operation. It will be used to update the thread stats.
 struct OpStats {
-  long long elapsed_micros;
-  long long transferred_bytes;
+  int64 elapsed_microseconds;
+  int64 transferred_bytes;
 };
 
 }  // namespace ml_metadata

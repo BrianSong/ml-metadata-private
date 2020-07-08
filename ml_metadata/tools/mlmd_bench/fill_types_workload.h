@@ -43,10 +43,8 @@ class FillTypes : public Workload<FillTypeWorkItemType> {
   // FillTypes is for inserting or updating types.
   // For inserting, it will generate the list of work items(FillTypesRequests)
   // by greatening a random type name and the number of properties for each type
-  // w.r.t. the uniform distribution. As the type name has a unique constraint,
-  // when the same name is generated, a rejection sampling is performed to jump
-  // through current operation and generate another name. Returns detailed error
-  // if query executions failed.
+  // w.r.t. the uniform distribution.
+  // Returns detailed error if query executions failed.
   tensorflow::Status SetUpImpl(MetadataStore* store) final;
 
   // Specific implementation of RunOpImpl() for FillTypes workload according to
@@ -67,8 +65,6 @@ class FillTypes : public Workload<FillTypeWorkItemType> {
   const FillTypesConfig fill_types_config_;
   // Number of operations for the current workload.
   const int64 num_operations_;
-  // A set used to ensure each type name generated is unique.
-  std::unordered_set<std::string> unique_name_checker_;
   // String for indicating the name of current workload instance.
   std::string name_;
 };

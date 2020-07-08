@@ -95,7 +95,7 @@ class Workload : public WorkloadBase {
     TF_RETURN_IF_ERROR(RunOpImpl(i, store));
     // Each operation will have an op_stats to record the statistic of the
     // current single operation.
-    op_stats.elapsed_microseconds = absl::Now() - start_time;
+    op_stats.elapsed_time = absl::Now() - start_time;
     op_stats.transferred_bytes = work_items_[i].second;
     return tensorflow::Status::OK();
   }

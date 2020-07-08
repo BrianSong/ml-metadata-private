@@ -45,7 +45,6 @@ ml_metadata_cc_test(
     deps = [
         ":fill_types_workload",
         "@com_google_absl//absl/memory",
-        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
         "//ml_metadata/metadata_store:metadata_store",
         "//ml_metadata/metadata_store:metadata_store_factory",
@@ -85,7 +84,6 @@ ml_metadata_cc_test(
     srcs = ["workload_test.cc"],
     deps = [
         ":workload",
-        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
         "//ml_metadata/metadata_store:metadata_store",
         "//ml_metadata/metadata_store:metadata_store_factory",

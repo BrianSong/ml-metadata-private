@@ -73,7 +73,7 @@ TEST_F(FillTypesTest, InsertTest) {
   }
 
   GetContextTypesResponse get_response;
-  TF_ASSERT_OK(store_->GetContextTypes(/*get_request=*/{}, &get_response));
+  TF_ASSERT_OK(store_->GetContextTypes(/*request=*/{}, &get_response));
   EXPECT_EQ(get_response.context_types_size(), fill_types_->num_operations());
 }
 

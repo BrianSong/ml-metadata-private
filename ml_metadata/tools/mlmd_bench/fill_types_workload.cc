@@ -32,7 +32,7 @@ namespace {
 // ContextType. It takes a `type_name` to generate a type and generates number
 // of properties w.r.t. to the uniform distribution.
 template <typename Type>
-void GenerateRandomType(absl::string_view type_name,
+void GenerateRandomType(std::string type_name,
                         std::uniform_int_distribution<int64>& uniform_dist,
                         std::minstd_rand0& gen, Type* type, int64* curr_bytes) {
   // The random type name will be a random number.
@@ -87,7 +87,7 @@ tensorflow::Status FillTypes::SetUpImpl(MetadataStore* store) {
   std::minstd_rand0 gen(absl::ToUnixMillis(absl::Now()));
 
   // TODO(briansong): Add update support.
-  for (int i = 0; i < num_operations_; i++) {
+  for (int64 i = 0; i < num_operations_; i++) {
     curr_bytes = 0;
     FillTypeWorkItemType put_request;
     const std::string type_name = absl::StrCat("type_", i);

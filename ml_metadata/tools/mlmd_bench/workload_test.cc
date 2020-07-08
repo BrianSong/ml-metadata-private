@@ -33,7 +33,7 @@ class FakeWorkload : public Workload<std::string> {
   tensorflow::Status SetUpImpl(MetadataStore* store) {
     // The work items for this fake workload will be ten pairs of string and
     // integer.
-    for (int i = 0; i < 100; ++i) {
+    for (int64 i = 0; i < 100; ++i) {
       work_items_.emplace_back("abcd", 3456);
     }
     return tensorflow::Status::OK();

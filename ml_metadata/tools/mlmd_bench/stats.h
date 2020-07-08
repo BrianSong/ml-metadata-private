@@ -23,7 +23,7 @@ namespace ml_metadata {
 // OpStats records the statics(elapsed microsecond, transferred bytes) of each
 // operation. It will be used to update the thread stats.
 struct OpStats {
-  absl::Duration elapsed_microseconds;
+  absl::Duration elapsed_time;
   int64 transferred_bytes;
 };
 

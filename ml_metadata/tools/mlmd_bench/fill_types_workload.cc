@@ -15,8 +15,6 @@ limitations under the License.
 #include "ml_metadata/tools/mlmd_bench/fill_types_workload.h"
 
 #include <random>
-#include <set>
-#include <vector>
 
 #include "absl/strings/substitute.h"
 #include "ml_metadata/metadata_store/metadata_store.h"
@@ -31,19 +29,14 @@ namespace ml_metadata {
 namespace {
 
 // A template function where the Type can be ArtifactType / ExecutionType /
-// ContextType.
-// Generates random type names and the number of properties for
-// each type w.r.t. the uniform distribution. Uses the unique_name_checker_ to
-// ensure each random type name generated is unique. If a new generated type
-// name exists inside the unique_name_checker_, return false to perform
-// rejection sampling. Otherwise, return true.
+// ContextType. It takes a `type_name` to generate a type and generates number
+// of properties w.r.t. to the uniform distribution.
 template <typename Type>
-bool GenerateRandomType(std::uniform_int_distribution<int64>& uniform_dist,
-                        std::minstd_rand0& gen,
-                        std::unordered_set<std::string>& unique_name_checker_,
-                        Type* type, int64* curr_bytes) {
+void GenerateRandomType(absl::string_view type_name,
+                        std::uniform_int_distribution<int64>& uniform_dist,
+                        std::minstd_rand0& gen, Type* type, int64* curr_bytes) {
   // The random type name will be a random number.
-  type->set_name(absl::StrCat(rand()));
+  type->set_name(type_name);
   // The curr_bytes records the total transferred bytes for executing each work
   // item.
   *curr_bytes += type->name().size();
@@ -54,13 +47,6 @@ bool GenerateRandomType(std::uniform_int_distribution<int64>& uniform_dist,
     (*type->mutable_properties())[absl::StrCat("p-", i)] = STRING;
     *curr_bytes += absl::StrCat("p-", i).size();
   }
-  // Uses unique_name_checker_ to check whether the current generated random
-  // type name is unique.
-  if (unique_name_checker_.find(type->name()) == unique_name_checker_.end()) {
-    unique_name_checker_.insert(type->name());
-    return true;
-  }
-  return false;
 }
 
 }  // namespace
@@ -100,52 +86,43 @@ tensorflow::Status FillTypes::SetUpImpl(MetadataStore* store) {
   // created.
   std::minstd_rand0 gen(absl::ToUnixMillis(absl::Now()));
 
-  int64 op = 0;
-  while (op < num_operations_) {
+  // TODO(briansong): Add update support.
+  for (int i = 0; i < num_operations_; i++) {
     curr_bytes = 0;
     FillTypeWorkItemType put_request;
+    const std::string type_name = absl::StrCat("type_", i);
     switch (fill_types_config_.specification()) {
       case FillTypesConfig::ARTIFACT_TYPE: {
         put_request.emplace<PutArtifactTypeRequest>();
-        // TODO(briansong): Add update support.
-        if (!GenerateRandomType<ArtifactType>(
-                uniform_dist, gen, unique_name_checker_,
-                absl::get<PutArtifactTypeRequest>(put_request)
-                    .mutable_artifact_type(),
-                &curr_bytes)) {
-          continue;
-        }
+        GenerateRandomType<ArtifactType>(
+            type_name, uniform_dist, gen,
+            absl::get<PutArtifactTypeRequest>(put_request)
+                .mutable_artifact_type(),
+            &curr_bytes);
         break;
       }
       case FillTypesConfig::EXECUTION_TYPE: {
         put_request.emplace<PutExecutionTypeRequest>();
-        // TODO(briansong): Add update support.
-        if (!GenerateRandomType<ExecutionType>(
-                uniform_dist, gen, unique_name_checker_,
-                absl::get<PutExecutionTypeRequest>(put_request)
-                    .mutable_execution_type(),
-                &curr_bytes)) {
-          continue;
-        }
+        GenerateRandomType<ExecutionType>(
+            type_name, uniform_dist, gen,
+            absl::get<PutExecutionTypeRequest>(put_request)
+                .mutable_execution_type(),
+            &curr_bytes);
         break;
       }
       case FillTypesConfig::CONTEXT_TYPE: {
         put_request.emplace<PutContextTypeRequest>();
-        // TODO(briansong): Add update support.
-        if (!GenerateRandomType<ContextType>(
-                uniform_dist, gen, unique_name_checker_,
-                absl::get<PutContextTypeRequest>(put_request)
-                    .mutable_context_type(),
-                &curr_bytes)) {
-          continue;
-        }
+        GenerateRandomType<ContextType>(
+            type_name, uniform_dist, gen,
+            absl::get<PutContextTypeRequest>(put_request)
+                .mutable_context_type(),
+            &curr_bytes);
         break;
       }
       default:
         return tensorflow::errors::InvalidArgument("Wrong specification!");
     }
     work_items_.emplace_back(put_request, curr_bytes);
-    op++;
   }
   return tensorflow::Status::OK();
 }
@@ -180,7 +157,6 @@ tensorflow::Status FillTypes::RunOpImpl(int64 i, MetadataStore* store) {
 
 tensorflow::Status FillTypes::TearDownImpl() {
   work_items_.clear();
-  unique_name_checker_.clear();
   return tensorflow::Status::OK();
 }
 

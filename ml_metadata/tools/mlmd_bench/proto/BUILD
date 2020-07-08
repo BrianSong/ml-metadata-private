@@ -19,7 +19,7 @@ load(
 
 licenses(["notice"])  # Apache 2.0
 
-package(default_visibility = ["//visibility:public"])
+package(default_visibility = ["//ml_metadata/tools/mlmd_bench:__subpackages__"])
 
 ml_metadata_proto_library(
     name = "mlmd_bench_proto",

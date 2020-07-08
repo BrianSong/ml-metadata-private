@@ -18,6 +18,7 @@ limitations under the License.
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "ml_metadata/metadata_store/metadata_store.h"
+#include "ml_metadata/metadata_store/types.h"
 #include "ml_metadata/tools/mlmd_bench/stats.h"
 #include "tensorflow/core/lib/core/errors.h"
 #include "tensorflow/core/lib/core/status.h"
@@ -49,7 +50,7 @@ class WorkloadBase {
 
   // Gets the current workload's name, which is used in stats report for this
   // workload.
-  virtual std::string name() = 0;
+  virtual std::string GetName() = 0;
 };
 
 // A base class for all specific workloads (FillTypes, FillNodes, ...).
@@ -87,15 +88,14 @@ class Workload : public WorkloadBase {
       return tensorflow::errors::FailedPrecondition("Set up is not finished!");
     }
     // Check if the work item index i is valid.
-    if (i < 0 || i >= (long long)work_items_.size()) {
+    if (i < 0 || i >= (int64)work_items_.size()) {
       return tensorflow::errors::InvalidArgument("Work item index invalid!");
     }
     absl::Time start_time = absl::Now();
     TF_RETURN_IF_ERROR(RunOpImpl(i, store));
     // Each operation will have an op_stats to record the statistic of the
     // current single operation.
-    op_stats.elapsed_microseconds =
-        (absl::Now() - start_time) / (absl::Microseconds(1));
+    op_stats.elapsed_microseconds = absl::Now() - start_time;
     op_stats.transferred_bytes = work_items_[i].second;
     return tensorflow::Status::OK();
   }
@@ -116,8 +116,6 @@ class Workload : public WorkloadBase {
 
   int64 num_operations() final { return work_items_.size(); }
 
-  std::string name() final { return name_; }
-
  protected:
   // The implementation of the SetUp(). It is called in SetUp() and responsible
   // for preparing the work_item_ for RunOpImpl()'s execution. The detail
@@ -137,13 +135,15 @@ class Workload : public WorkloadBase {
   // detailed error if query executions failed.
   virtual tensorflow::Status TearDownImpl() = 0;
 
+  // Gets the current workload's name, which is used in stats report for this
+  // workload.
+  virtual std::string GetName() = 0;
+
   // Boolean for indicating whether the work items have been prepared or not. It
   // will be used to ensure the right execution sequence. SetUp() will set it to
   // true and RunOp() and TearDown() will check its state. If it is false, then
   // Failed Precondition error will be returned for RunOp() and TearDown().
   bool is_setup_;
-  // String for indicating the name of current workload instance.
-  std::string name_;
   // The work items for a workload. It is a vector of pairs where each pair
   // consists of each individual work item and the transferred bytes for
   // executing them. It is created in SetUpImpl(), and each RunOpImpl()

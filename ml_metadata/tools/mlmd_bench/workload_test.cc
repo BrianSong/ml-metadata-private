@@ -17,6 +17,7 @@ limitations under the License.
 #include <gtest/gtest.h>
 #include "ml_metadata/metadata_store/metadata_store.h"
 #include "ml_metadata/metadata_store/metadata_store_factory.h"
+#include "ml_metadata/metadata_store/types.h"
 #include "ml_metadata/proto/metadata_store.pb.h"
 #include "tensorflow/core/lib/core/errors.h"
 #include "tensorflow/core/lib/core/status.h"
@@ -46,6 +47,8 @@ class FakeWorkload : public Workload<std::string> {
     work_items_.clear();
     return tensorflow::Status::OK();
   }
+
+  std::string GetName() { return "fake_workload"; }
 };
 
 // Test fixture that uses the same data configuration for multiple following

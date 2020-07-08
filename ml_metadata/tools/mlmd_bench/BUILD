@@ -30,6 +30,7 @@ cc_library(
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:variant",
         "//ml_metadata/metadata_store:metadata_store",
+        "//ml_metadata/metadata_store:types",
         "//ml_metadata/proto:metadata_store_proto",
         "//ml_metadata/proto:metadata_store_service_proto",
         "//ml_metadata/tools/mlmd_bench/proto:mlmd_bench_proto",
@@ -49,6 +50,7 @@ ml_metadata_cc_test(
         "//ml_metadata/metadata_store:metadata_store",
         "//ml_metadata/metadata_store:metadata_store_factory",
         "//ml_metadata/metadata_store:test_util",
+        "//ml_metadata/metadata_store:types",
         "//ml_metadata/proto:metadata_store_proto",
         "//ml_metadata/proto:metadata_store_service_proto",
         "//ml_metadata/tools/mlmd_bench/proto:mlmd_bench_proto",
@@ -60,6 +62,7 @@ cc_library(
     name = "stats",
     hdrs = ["stats.h"],
     deps = [
+        "@com_google_absl//absl/time",
         "//ml_metadata/metadata_store:types",
     ]
 )
@@ -71,6 +74,7 @@ cc_library(
         ":stats",
         "@com_google_absl//absl/time",
         "//ml_metadata/metadata_store:metadata_store",
+        "//ml_metadata/metadata_store:types",
         "@org_tensorflow//tensorflow/core:lib",
     ]
 )
@@ -85,6 +89,7 @@ ml_metadata_cc_test(
         "@com_google_googletest//:gtest_main",
         "//ml_metadata/metadata_store:metadata_store",
         "//ml_metadata/metadata_store:metadata_store_factory",
+        "//ml_metadata/metadata_store:types",
         "//ml_metadata/proto:metadata_store_proto",
         "@org_tensorflow//tensorflow/core:lib",
         "@org_tensorflow//tensorflow/core:test",

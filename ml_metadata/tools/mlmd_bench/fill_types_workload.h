@@ -17,6 +17,7 @@ limitations under the License.
 
 #include "absl/types/variant.h"
 #include "ml_metadata/metadata_store/metadata_store.h"
+#include "ml_metadata/metadata_store/types.h"
 #include "ml_metadata/proto/metadata_store_service.pb.h"
 #include "ml_metadata/tools/mlmd_bench/proto/mlmd_bench.pb.h"
 #include "ml_metadata/tools/mlmd_bench/workload.h"
@@ -57,6 +58,10 @@ class FillTypes : public Workload<FillTypeWorkItemType> {
   // to its semantic. Cleans the work_items_.
   tensorflow::Status TearDownImpl() final;
 
+  // Gets the current workload's name, which is used in stats report for this
+  // workload.
+  std::string GetName() final;
+
  private:
   // Workload configurations specified by the users.
   const FillTypesConfig fill_types_config_;
@@ -64,6 +69,8 @@ class FillTypes : public Workload<FillTypeWorkItemType> {
   const int64 num_operations_;
   // A set used to ensure each type name generated is unique.
   std::unordered_set<std::string> unique_name_checker_;
+  // String for indicating the name of current workload instance.
+  std::string name_;
 };
 
 }  // namespace ml_metadata

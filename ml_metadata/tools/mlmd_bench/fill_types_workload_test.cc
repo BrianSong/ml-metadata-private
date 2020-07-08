@@ -19,6 +19,7 @@ limitations under the License.
 #include "ml_metadata/metadata_store/metadata_store.h"
 #include "ml_metadata/metadata_store/metadata_store_factory.h"
 #include "ml_metadata/metadata_store/test_util.h"
+#include "ml_metadata/metadata_store/types.h"
 #include "ml_metadata/proto/metadata_store.pb.h"
 #include "ml_metadata/proto/metadata_store_service.pb.h"
 #include "ml_metadata/tools/mlmd_bench/proto/mlmd_bench.pb.h"
@@ -26,6 +27,8 @@ limitations under the License.
 
 namespace ml_metadata {
 namespace {
+
+constexpr int64 kNumOperations = 100;
 
 // Test fixture that uses the same data configuration for multiple following
 // tests.
@@ -40,11 +43,11 @@ class FillTypesTest : public ::testing::Test {
     fill_types_config = testing::ParseTextProtoOrDie<FillTypesConfig>(
         R"(
           update: false
-          specification: ARTIFACT_TYPE
+          specification: CONTEXT_TYPE
           num_properties { minimum: 1 maximum: 10 }
         )");
-    fill_types_ =
-        absl::make_unique<FillTypes>(FillTypes(fill_types_config, 100));
+    fill_types_ = absl::make_unique<FillTypes>(
+        FillTypes(fill_types_config, kNumOperations));
   }
 
   std::unique_ptr<FillTypes> fill_types_;
@@ -55,9 +58,8 @@ class FillTypesTest : public ::testing::Test {
 // Checks the SetUpImpl() indeed prepares a list of work items whose length is
 // the same as the specified number of operations.
 TEST_F(FillTypesTest, SetUpImplTest) {
-  int num_operations = 100;
   TF_ASSERT_OK(fill_types_->SetUp(store_.get()));
-  EXPECT_EQ(num_operations, fill_types_->num_operations());
+  EXPECT_EQ(kNumOperations, fill_types_->num_operations());
 }
 
 // Tests the RunOpImpl() for insert types.
@@ -66,14 +68,13 @@ TEST_F(FillTypesTest, SetUpImplTest) {
 TEST_F(FillTypesTest, InsertTest) {
   TF_ASSERT_OK(fill_types_->SetUp(store_.get()));
   for (int64 i = 0; i < fill_types_->num_operations(); ++i) {
-    OpStats op_stats{0, 0};
+    OpStats op_stats;
     TF_EXPECT_OK(fill_types_->RunOp(i, store_.get(), op_stats));
   }
 
-  GetArtifactTypesRequest get_request;
-  GetArtifactTypesResponse get_response;
-  TF_ASSERT_OK(store_->GetArtifactTypes(get_request, &get_response));
-  EXPECT_EQ(get_response.artifact_types_size(), fill_types_->num_operations());
+  GetContextTypesResponse get_response;
+  TF_ASSERT_OK(store_->GetContextTypes(/*get_request=*/{}, &get_response));
+  EXPECT_EQ(get_response.context_types_size(), fill_types_->num_operations());
 }
 
 }  // namespace

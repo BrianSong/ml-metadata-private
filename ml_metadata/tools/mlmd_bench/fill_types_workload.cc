@@ -20,6 +20,7 @@ limitations under the License.
 
 #include "absl/strings/substitute.h"
 #include "ml_metadata/metadata_store/metadata_store.h"
+#include "ml_metadata/metadata_store/types.h"
 #include "ml_metadata/proto/metadata_store.pb.h"
 #include "ml_metadata/proto/metadata_store_service.pb.h"
 #include "ml_metadata/tools/mlmd_bench/proto/mlmd_bench.pb.h"
@@ -182,5 +183,7 @@ tensorflow::Status FillTypes::TearDownImpl() {
   unique_name_checker_.clear();
   return tensorflow::Status::OK();
 }
+
+std::string FillTypes::GetName() { return name_; }
 
 }  // namespace ml_metadata

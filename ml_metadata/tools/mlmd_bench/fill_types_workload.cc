@@ -32,7 +32,7 @@ namespace {
 // ContextType. It takes a `type_name` to generate a type and generates number
 // of properties w.r.t. to the uniform distribution.
 template <typename Type>
-void GenerateRandomType(std::string type_name,
+void GenerateRandomType(std::string& type_name,
                         std::uniform_int_distribution<int64>& uniform_dist,
                         std::minstd_rand0& gen, Type* type, int64* curr_bytes) {
   // The random type name will be a random number.

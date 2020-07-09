@@ -42,7 +42,7 @@ class FillTypes : public Workload<FillTypeWorkItemType> {
   // its semantic. The detail implementation will depend on whether the current
   // FillTypes is for inserting or updating types.
   // For inserting, it will generate the list of work items(FillTypesRequests)
-  // by greatening a type name and the number of properties for each type
+  // by generating a type name and the number of properties for each type
   // w.r.t. the uniform distribution.
   // Returns detailed error if query executions failed.
   tensorflow::Status SetUpImpl(MetadataStore* store) final;
